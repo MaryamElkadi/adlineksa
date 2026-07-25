@@ -33,7 +33,7 @@ interface QuoteRequest {
 
 type TabType = 'orders' | 'quotes' | 'proofs' | 'artworks' | 'tickets';
 
-function DashboardPage() {
+export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -629,6 +629,3 @@ function DashboardPage() {
     </div>
   );
 }
-
-// تصدير صريح ونظيف في النهاية لتفادي أخطاء الـ Build
-export default DashboardPage;
