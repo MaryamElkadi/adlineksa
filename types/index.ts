@@ -51,10 +51,7 @@ export interface QuantityTier {
   unitPrice: number;  // e.g. 5.50 EGP per unit
 }
 
-export interface ProductAttribute {
-  name: string;
-  options: string[];
-}
+
 
 export interface Product {
   // Basic Information
