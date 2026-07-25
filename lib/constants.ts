@@ -1,0 +1,208 @@
+import { Category, Product, Review } from '@/types';
+
+export const CATEGORIES: Category[] = [
+  {
+    id: 'cat-1',
+    name: 'Business Cards',
+    nameAr: 'كروت شخصية',
+    slug: 'business-cards',
+    description: 'Premium luxury cards with spot UV, foil stamping & velvet finish',
+    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=600&q=80',
+    itemCount: 24,
+  },
+  {
+    id: 'cat-2',
+    name: 'Flyers & Pamphlets',
+    nameAr: 'بروشورات ومطويات',
+    slug: 'flyers',
+    description: 'High quality marketing flyers in gloss, matte & tri-fold formats',
+    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80',
+    itemCount: 18,
+  },
+  {
+    id: 'cat-3',
+    name: 'Roll Up & Banners',
+    nameAr: 'رول أب وبانرات',
+    slug: 'banners',
+    description: 'Retractable roll up banners, flex banners, & outdoor mesh',
+    image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=600&q=80',
+    itemCount: 15,
+  },
+  {
+    id: 'cat-4',
+    name: 'Stickers & Labels',
+    nameAr: 'ملصقات وستيكرات',
+    slug: 'stickers',
+    description: 'Die-cut vinyl stickers, transparent labels & roll stickers',
+    image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
+    itemCount: 32,
+  },
+  {
+    id: 'cat-5',
+    name: 'Boxes & Packaging',
+    nameAr: 'علب وتغليف',
+    slug: 'packaging',
+    description: 'Custom mailer boxes, product packaging & retail display boxes',
+    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
+    itemCount: 20,
+  },
+  {
+    id: 'cat-6',
+    name: 'Apparel & Uniforms',
+    nameAr: 'طباعة ملابس',
+    slug: 'apparel',
+    description: 'Custom embroidered polo shirts, hoodies, & promotional tees',
+    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
+    itemCount: 14,
+  },
+  {
+    id: 'cat-7',
+    name: 'Signs & Display Stand',
+    nameAr: 'لوحات إعلانية',
+    slug: 'signs',
+    description: 'Acrylic 3D signage, LED illuminated boards & exhibition popups',
+    image: 'https://images.unsplash.com/photo-1542744094-3a3172720188?auto=format&fit=crop&w=600&q=80',
+    itemCount: 12,
+  },
+  {
+    id: 'cat-8',
+    name: 'Branded Mugs & Gifts',
+    nameAr: 'هدايا ومطبوعات',
+    slug: 'gifts',
+    description: 'Ceramic mugs, corporate gift sets, pens & custom notebooks',
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
+    itemCount: 28,
+  },
+];
+
+export const PRODUCTS: Product[] = [
+  {
+    id: 'p-1',
+    name: 'Ultra Luxe Business Cards',
+    nameAr: 'كروت شخصية فاخرة جداً',
+    slug: 'luxe-business-cards',
+    categorySlug: 'business-cards',
+    basePrice: 120,
+    rating: 4.9,
+    reviewCount: 128,
+    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=800&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    ],
+    description: 'Heavyweight 400gsm cotton cardstock with optional gold/silver foil stamping and soft-touch lamination.',
+    badge: 'Bestseller',
+    minQuantity: 100,
+    availableSizes: ['90x55 mm (Standard)', '85x55 mm (European)', '55x55 mm (Square)'],
+    materials: ['400gsm Premium Matte', '350gsm Soft-Touch Velvet', '600gsm Extra Thick Cotton'],
+  },
+  {
+    id: 'p-2',
+    name: 'Luxury Deluxe Roll Up Stand',
+    nameAr: 'ستاند رول أب فاخر',
+    slug: 'deluxe-rollup-stand',
+    categorySlug: 'banners',
+    basePrice: 195,
+    rating: 4.8,
+    reviewCount: 84,
+    image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=800&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=800&q=80',
+    ],
+    description: 'Heavy duty aluminum base stand with vibrant UV glare-free banner print and carrying bag.',
+    badge: 'Popular',
+    minQuantity: 1,
+    availableSizes: ['85x200 cm', '100x200 cm', '120x200 cm'],
+    materials: ['Anti-curl PET Film', 'Flex Banner 440gsm', 'Blockout Fabric'],
+  },
+  {
+    id: 'p-3',
+    name: 'Custom Product Packaging Box',
+    nameAr: 'صناديق تغليف مخصصة',
+    slug: 'custom-packaging-box',
+    categorySlug: 'packaging',
+    basePrice: 250,
+    rating: 5.0,
+    reviewCount: 46,
+    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80',
+    ],
+    description: 'Sturdy corrugated mailer boxes fully printed inside & outside with glossy finish.',
+    badge: 'Enterprise Choice',
+    minQuantity: 50,
+    availableSizes: ['Small (20x15x10 cm)', 'Medium (30x20x12 cm)', 'Large (40x30x15 cm)'],
+    materials: ['E-Flute Corrugated', 'Rigid Board with Velvet Insert', 'Kraft Eco Paper'],
+  },
+  {
+    id: 'p-4',
+    name: 'High-Gloss Promotional Flyers',
+    nameAr: 'بروشورات إعلانية عالية الجودة',
+    slug: 'gloss-flyers',
+    categorySlug: 'flyers',
+    basePrice: 90,
+    rating: 4.7,
+    reviewCount: 92,
+    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    ],
+    description: 'Vibrant full-color offset printed flyers available in A4, A5, and A6 single or double-sided.',
+    minQuantity: 250,
+    availableSizes: ['A5 (148x210 mm)', 'A4 (210x297 mm)', 'DL (99x210 mm)'],
+    materials: ['150gsm Gloss Paper', '250gsm Premium Cardstock', '170gsm Matte Silk'],
+  },
+];
+
+export const TESTIMONIALS: Review[] = [
+  {
+    id: 'rev-1',
+    author: 'Sami Al-Otaibi',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    comment: 'Adline KSA transformed our corporate branding! The gold foil business cards and exhibition banners were delivered flawlessly within 48 hours.',
+    date: '2026-06-15',
+    verifiedPurchase: true,
+  },
+  {
+    id: 'rev-2',
+    author: 'Noura Al-Ghamdi',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    comment: 'The instant price configurator saved us so much time. We ordered 1,000 custom packaging boxes and the print quality surpassed all expectations.',
+    date: '2026-07-02',
+    verifiedPurchase: true,
+  },
+  {
+    id: 'rev-3',
+    author: 'Fahad Al-Dossary',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    rating: 5,
+    comment: 'Exceptional service! Their team guided us through vector artwork proof approval seamlessly. Will definitely reorder for all our future campaigns.',
+    date: '2026-07-10',
+    verifiedPurchase: true,
+  },
+];
+
+export const FAQS = [
+  {
+    question: 'How fast can I receive my print order in Saudi Arabia?',
+    answer: 'Standard production and delivery takes 2-4 business days across all major cities (Riyadh, Jeddah, Dammam). We also offer Express Next-Day delivery for urgent business cards & banners.',
+  },
+  {
+    question: 'What artwork formats do you accept for custom printing?',
+    answer: 'We accept high-resolution PDF, AI (Adobe Illustrator), PSD, and PNG files (minimum 300 DPI with 3mm bleed margin in CMYK color mode).',
+  },
+  {
+    question: 'Can I request a sample proof before mass printing?',
+    answer: 'Yes! For large quantity orders or custom packaging, you can approve a digital proof via your User Dashboard or request a physical sample package.',
+  },
+  {
+    question: 'How does the dynamic price configurator work?',
+    answer: 'Simply select your desired material, dimensions, lamination, and quantity. The system automatically updates the exact unit price and total cost with volume discounts applied in real-time.',
+  },
+];
+
+export const BRANDS = [
+  'Aramco Partners', 'SABIC Suppliers', 'STC Business', 'Riyadh Season', 'Neom Eco', 'Al-Rajhi Group'
+];
