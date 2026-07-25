@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
-// واجهة بيانات الطلب من MongoDB
 interface Order {
   _id: string;
   number: string;
@@ -12,7 +11,7 @@ interface Order {
   items: string;
   total: number;
   status: string;
-  step: number; // 1: تم الاستلام, 2: قيد المراجعة, 3: جاري الطباعة, 4: تم التوصيل
+  step: number;
   trackingDetails?: {
     carrier?: string;
     trackingNumber?: string;
@@ -21,7 +20,6 @@ interface Order {
   };
 }
 
-// واجهة بيانات طلبات التسعير
 interface QuoteRequest {
   _id: string;
   number: string;
@@ -35,12 +33,11 @@ interface QuoteRequest {
 
 type TabType = 'orders' | 'quotes' | 'proofs' | 'artworks' | 'tickets';
 
-export default function DashboardPage() {
+function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // قائمة طلبات التسعير
   const [quotes, setQuotes] = useState<QuoteRequest[]>([
     {
       _id: 'q1',
@@ -63,18 +60,13 @@ export default function DashboardPage() {
     },
   ]);
 
-  // حالات Modals والنوافذ التفاعلية
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Order | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
   const [isNewQuoteOpen, setIsNewQuoteOpen] = useState<boolean>(false);
   const [isNewTicketOpen, setIsNewTicketOpen] = useState<boolean>(false);
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
-
-  // حالة الموافقة على البروفة
   const [proofStatus, setProofStatus] = useState<'pending' | 'approved' | 'revision_requested'>('pending');
-
-  // رسالة تنبيه تفاعلية (Toast)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -82,7 +74,6 @@ export default function DashboardPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // جلب البيانات من داتابيز MongoDB
   useEffect(() => {
     async function fetchOrders() {
       try {
@@ -92,7 +83,6 @@ export default function DashboardPage() {
           const data = await res.json();
           setOrders(data);
         } else {
-          // بيانات افتراضية للعرض في حال عدم توفر الـ API
           setOrders([
             {
               _id: 'ord1',
@@ -133,7 +123,6 @@ export default function DashboardPage() {
     fetchOrders();
   }, []);
 
-  // معالجة إضافة طلب تسعير جديد
   const handleCreateQuote = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -153,8 +142,6 @@ export default function DashboardPage() {
 
   return (
     <div dir="rtl" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 text-right font-sans relative">
-      
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-5 left-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-amber-400 flex items-center gap-3 animate-bounce">
           <span>✨</span>
@@ -165,7 +152,6 @@ export default function DashboardPage() {
       {/* User Header */}
       <div className="bg-gradient-to-br from-amber-50/80 via-white to-sky-50/50 border border-amber-200/80 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs relative overflow-hidden">
         <div className="absolute top-0 left-0 w-32 h-32 bg-amber-300/20 rounded-full blur-2xl pointer-events-none" />
-        
         <div className="flex items-center gap-4 relative">
           <div className="w-14 h-14 rounded-2xl bg-amber-400 text-slate-900 font-black text-2xl flex items-center justify-center shadow-md">
             س
@@ -190,7 +176,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Tabs */}
       <div className="flex overflow-x-auto gap-2 border-b border-slate-200 pb-2 scrollbar-none">
         {[
           { id: 'orders' as TabType, label: '📦 الطلبات والتتبع' },
@@ -213,13 +199,12 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Tab Content: Orders */}
+      {/* Content */}
       {activeTab === 'orders' && (
         <div className="space-y-4">
           <h2 className="text-lg font-black text-slate-900">أعمال الطباعة الحالية والسابقة</h2>
-
           {loading ? (
-            <div className="text-center py-12 text-slate-400 font-medium">جاري تحميل الطلبات من MongoDB...</div>
+            <div className="text-center py-12 text-slate-400 font-medium">جاري تحميل الطلبات...</div>
           ) : orders.length === 0 ? (
             <div className="text-center py-12 text-slate-400 font-medium">لا توجد طلبات حصرية حالياً.</div>
           ) : (
@@ -240,7 +225,6 @@ export default function DashboardPage() {
 
                 <div className="text-xs font-bold text-slate-700">{ord.items}</div>
 
-                {/* Progress Bar */}
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-[11px] font-bold text-slate-400">
                     <span className={ord.step >= 1 ? 'text-amber-600 font-black' : ''}>1. تم الاستلام</span>
@@ -256,7 +240,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Actions Bar */}
                 <div className="flex flex-wrap justify-end gap-3 pt-2">
                   <Button 
                     size="sm" 
@@ -266,7 +249,6 @@ export default function DashboardPage() {
                   >
                     📄 تحميل الفاتورة PDF
                   </Button>
-                  
                   <Button 
                     size="sm" 
                     onClick={() => setSelectedOrder(ord)}
@@ -274,7 +256,6 @@ export default function DashboardPage() {
                   >
                     📍 متابعة الشحنة والطلب
                   </Button>
-
                   <Button 
                     size="sm" 
                     variant="outline" 
@@ -290,7 +271,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Tab Content: Quotes / طلبات التسعير */}
+      {/* Quotes Tab */}
       {activeTab === 'quotes' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -436,7 +417,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Track Order Modal */}
+      {/* Modals */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl space-y-6 relative border border-slate-100">
@@ -450,7 +431,6 @@ export default function DashboardPage() {
               <button
                 onClick={() => setSelectedOrder(null)}
                 className="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-600 font-bold transition-all flex items-center justify-center cursor-pointer text-sm"
-                title="إغلاق"
               >
                 ✕
               </button>
@@ -501,7 +481,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Invoice Modal */}
       {selectedInvoice && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-6 relative border border-slate-100">
@@ -535,7 +514,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal: New RFQ */}
       {isNewQuoteOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl space-y-4 relative border border-slate-100">
@@ -551,7 +529,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <label className="block mb-1">المواصفات الفنية والتفاصيل:</label>
-                <textarea required name="specs" rows={3} placeholder="نوع الورق، السُمك، نوع الطباعة، الألوان، المقاسات..." className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-amber-400" />
+                <textarea required name="specs" rows={3} placeholder="نوع الورق، السُمك، نوع الطباعة..." className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-amber-400" />
               </div>
               <div>
                 <label className="block mb-1">الكمية المطلوبة:</label>
@@ -565,7 +543,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal: Edit Profile */}
       {isEditProfileOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-4 relative border border-slate-100">
@@ -596,7 +573,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal: Upload Artwork */}
       {isUploadOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-4 relative border border-slate-100 text-center">
@@ -621,7 +597,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal: New Ticket */}
       {isNewTicketOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-4 relative border border-slate-100">
@@ -651,7 +626,9 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
+
+// تصدير صريح ونظيف في النهاية لتفادي أخطاء الـ Build
+export default DashboardPage;
