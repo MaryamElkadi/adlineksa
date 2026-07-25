@@ -99,7 +99,7 @@ const getBadgeVariant = (status: string) => {
             </Button>
           </Link>
           <Link href="/admin/orders">
-            <Button size="sm" className='text-slate-800'>
+            <Button size="sm" variant="yelow" >
               عرض جميع الطلبات ←
             </Button>
           </Link>

@@ -33,8 +33,10 @@ interface QuoteRequest {
   priceOffer?: number;
 }
 
+type TabType = 'orders' | 'quotes' | 'proofs' | 'artworks' | 'tickets';
+
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'quotes' | 'proofs' | 'artworks' | 'tickets'>('orders');
+  const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -191,15 +193,15 @@ export default function DashboardPage() {
       {/* Navigation Tabs */}
       <div className="flex overflow-x-auto gap-2 border-b border-slate-200 pb-2 scrollbar-none">
         {[
-          { id: 'orders', label: '📦 الطلبات والتتبع' },
-          { id: 'quotes', label: '🏷️ طلبات التسعير (RFQ)' },
-          { id: 'proofs', label: `🔍 مراجعة التصاميم ${proofStatus === 'pending' ? '(1 بانتظار الموافقة)' : ''}` },
-          { id: 'artworks', label: '📁 مكتبة التصاميم' },
-          { id: 'tickets', label: '💬 تذاكر الدعم الفني' },
+          { id: 'orders' as TabType, label: '📦 الطلبات والتتبع' },
+          { id: 'quotes' as TabType, label: '🏷️ طلبات التسعير (RFQ)' },
+          { id: 'proofs' as TabType, label: `🔍 مراجعة التصاميم ${proofStatus === 'pending' ? '(1 بانتظار الموافقة)' : ''}` },
+          { id: 'artworks' as TabType, label: '📁 مكتبة التصاميم' },
+          { id: 'tickets' as TabType, label: '💬 تذاكر الدعم الفني' },
         ].map((tb) => (
           <button
             key={tb.id}
-            onClick={() => setActiveTab(tb.id as any)}
+            onClick={() => setActiveTab(tb.id)}
             className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
               activeTab === tb.id
                 ? 'bg-amber-400 text-slate-900 shadow-xs'
@@ -499,7 +501,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Invoice Modal (تحميل وتنسيق الفاتورة) */}
+      {/* Invoice Modal */}
       {selectedInvoice && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-6 relative border border-slate-100">
@@ -533,7 +535,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal: New RFQ (طلب تسعير جديد) */}
+      {/* Modal: New RFQ */}
       {isNewQuoteOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl space-y-4 relative border border-slate-100">
