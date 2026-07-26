@@ -11,7 +11,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, alt }) =
   const [selectedImage, setSelectedImage] = useState(images[0] || '');
 
   return (
-    <div className="flex flex-col gap-4">
+    <div dir="rtl" className="flex flex-col gap-4">
       <div className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
         <img
           src={selectedImage || images[0]}
@@ -30,7 +30,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, alt }) =
                 selectedImage === img ? 'border-amber-400 scale-105' : 'border-slate-800 opacity-60 hover:opacity-100'
               }`}
             >
-              <img src={img} alt={`${alt} thumbnail ${idx}`} className="w-full h-full object-cover" />
+              <img src={img} alt={`${alt} صورة مصغرة ${idx + 1}`} className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

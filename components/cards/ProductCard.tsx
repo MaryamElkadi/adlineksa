@@ -13,7 +13,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
-    <div className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
+    <div dir="rtl" className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
         <img
           src={product.image}
@@ -21,7 +21,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         {product.badge && (
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 right-3">
             <Badge variant="yellow">{product.badge}</Badge>
           </div>
         )}
@@ -44,7 +44,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Starting at</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">
+              يبدأ من
+            </span>
             <span className="text-lg font-black text-brand-blue">
               {formatCurrency(product.basePrice)}
             </span>
@@ -52,7 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           <Link href={`/products?slug=${product.slug}`}>
             <Button size="sm" variant="yellow">
-              Configure →
+              تخصيص ←
             </Button>
           </Link>
         </div>

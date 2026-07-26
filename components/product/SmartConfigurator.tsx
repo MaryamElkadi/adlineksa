@@ -13,8 +13,8 @@ interface SmartConfiguratorProps {
 export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product }) => {
   const { addItem } = useCart();
 
-  const [selectedSize, setSelectedSize] = useState(product.availableSizes[0] || 'Standard');
-  const [selectedMaterial, setSelectedMaterial] = useState(product.materials[0] || 'Default');
+  const [selectedSize, setSelectedSize] = useState(product.availableSizes[0] || 'قياسي');
+  const [selectedMaterial, setSelectedMaterial] = useState(product.materials[0] || 'افتراضي');
   const [quantity, setQuantity] = useState(product.minQuantity || 100);
   const [lamination, setLamination] = useState<'none' | 'gloss' | 'velvet' | 'foil'>('none');
   const [customNotes, setCustomNotes] = useState('');
@@ -22,8 +22,8 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [isAdded, setIsAdded] = useState(false);
 
   // Multipliers
-  const sizeMult = selectedSize.includes('Square') ? 0.9 : selectedSize.includes('Large') ? 1.4 : 1.0;
-  const matMult = selectedMaterial.includes('Cotton') ? 1.5 : selectedMaterial.includes('Velvet') ? 1.25 : 1.0;
+  const sizeMult = selectedSize.includes('مربع') || selectedSize.includes('Square') ? 0.9 : selectedSize.includes('كبير') || selectedSize.includes('Large') ? 1.4 : 1.0;
+  const matMult = selectedMaterial.includes('قطن') || selectedMaterial.includes('Cotton') ? 1.5 : selectedMaterial.includes('مخمل') || selectedMaterial.includes('Velvet') ? 1.25 : 1.0;
   const lamAddon = lamination === 'foil' ? 0.5 : lamination === 'velvet' ? 0.2 : lamination === 'gloss' ? 0.1 : 0;
 
   const totalCalculatedPrice = calculateConfiguredPrice(
@@ -56,28 +56,28 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   };
 
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col gap-6">
+    <div dir="rtl" className="bg-white border-2 border-slate-200 rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col gap-6">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
-          <h2 className="text-xl font-black text-brand-blue">Smart Product Configurator</h2>
-          <p className="text-xs text-amber-600 font-bold">Instant dynamic pricing system</p>
+          <h2 className="text-xl font-black text-brand-blue">أداة تخصيص المنتجات الذكية</h2>
+          <p className="text-xs text-amber-600 font-bold">نظام تسعير ديناميكي فوري</p>
         </div>
         <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs px-3 py-1 rounded-full font-bold">
-          Live Calculator
+          حاسبة فورية
         </span>
       </div>
 
-      {/* Step 1: Material */}
+      {/* الخطوة 1: اختيار المادة */}
       <div>
         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
-          1. Select Material & Paperstock
+          1. اختر خامة الورق والمادة
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {product.materials.map((mat) => (
             <button
               key={mat}
               onClick={() => setSelectedMaterial(mat)}
-              className={`p-3 rounded-xl border text-xs text-left font-bold transition-all ${
+              className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
                 selectedMaterial === mat
                   ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
                   : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
@@ -89,17 +89,17 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
         </div>
       </div>
 
-      {/* Step 2: Size */}
+      {/* الخطوة 2: اختيار المقاس */}
       <div>
         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
-          2. Select Size & Dimensions
+          2. اختر المقاس والأبعاد
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {product.availableSizes.map((sz) => (
             <button
               key={sz}
               onClick={() => setSelectedSize(sz)}
-              className={`p-3 rounded-xl border text-xs text-left font-bold transition-all ${
+              className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
                 selectedSize === sz
                   ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
                   : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
@@ -111,14 +111,14 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
         </div>
       </div>
 
-      {/* Step 3: Quantity */}
+      {/* الخطوة 3: الكمية */}
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            3. Quantity
+            3. الكمية
           </label>
           <span className="text-xs text-amber-600 font-bold">
-            {quantity >= 1000 ? '25% Volume Discount Applied!' : quantity >= 500 ? '15% Volume Discount' : ''}
+            {quantity >= 1000 ? 'تم تطبيق خصم 25% للكميات الكبيرة!' : quantity >= 500 ? 'خصم 15% للكميات' : ''}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -144,17 +144,17 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
         </div>
       </div>
 
-      {/* Step 4: Lamination / Finishing */}
+      {/* الخطوة 4: التغليف / اللمسات الأخيرة */}
       <div>
         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
-          4. Special Lamination / Finish
+          4. السلفنة واللمسات الخاصة
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { id: 'none', label: 'Standard Matte' },
-            { id: 'gloss', label: 'High Gloss UV' },
-            { id: 'velvet', label: 'Soft Touch Velvet' },
-            { id: 'foil', label: 'Metallic Gold Foil' },
+            { id: 'none', label: 'مطفي قياسي' },
+            { id: 'gloss', label: 'لامع UV' },
+            { id: 'velvet', label: 'مخملي ناعم' },
+            { id: 'foil', label: 'بصمة ذهبية معدنية' },
           ].map((finish) => (
             <button
               key={finish.id}
@@ -171,14 +171,14 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
         </div>
       </div>
 
-      {/* File Upload Section */}
+      {/* قسم رفع الملفات */}
       <div className="border-2 border-dashed border-slate-300 bg-slate-50 rounded-2xl p-4 text-center">
         <label className="cursor-pointer block">
           <span className="text-xs text-slate-800 font-bold block mb-1">
-            📁 Upload Artwork File (PDF, AI, PSD, PNG)
+            📁 رفع ملف التصميم (PDF, AI, PSD, PNG)
           </span>
           <span className="text-[11px] text-slate-500 block mb-2">
-            Max 50MB. CMYK 300DPI recommended.
+            الحد الأقصى 50 ميجابايت. يوصى بنظام ألوان CMYK بدقة 300DPI.
           </span>
           <input
             type="file"
@@ -190,25 +190,25 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
             }}
           />
           <span className="inline-block px-4 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-brand-blue font-bold shadow-xs hover:bg-slate-100">
-            {fileUploaded ? `File Attached: ${fileUploaded}` : 'Choose File'}
+            {fileUploaded ? `الملف المرفق: ${fileUploaded}` : 'اختر الملف'}
           </span>
         </label>
       </div>
 
-      {/* Dynamic Summary Footer */}
+      {/* ملخص السعر */}
       <div className="bg-brand-blue rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-white shadow-lg">
         <div>
-          <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">Estimated Price</span>
+          <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">السعر التقديري</span>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-amber-400">
               {formatCurrency(totalCalculatedPrice)}
             </span>
             <span className="text-xs text-slate-300 font-medium">
-              ({formatCurrency(unitCalculatedPrice)} / unit)
+              ({formatCurrency(unitCalculatedPrice)} / للقطعة)
             </span>
           </div>
           <span className="text-[10px] text-emerald-300 font-bold block mt-0.5">
-            ✓ Estimated Delivery: 2-3 Business Days KSA
+            ✓ التوصيل المتوقع: 2-3 أيام عمل داخل المملكة العربية السعودية
           </span>
         </div>
 
@@ -218,7 +218,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           onClick={handleAddToCart}
           className="w-full sm:w-auto text-slate-950 font-black"
         >
-          {isAdded ? '✓ Added to Cart!' : 'Add Configured Item to Cart'}
+          {isAdded ? '✓ تم الإضافة إلى السلة!' : 'إضافة المنتج المخصص إلى السلة'}
         </Button>
       </div>
     </div>

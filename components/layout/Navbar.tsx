@@ -11,7 +11,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm transition-all">
+      <header dir="rtl" className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -20,7 +20,7 @@ export const Navbar: React.FC = () => {
             </div>
             <div>
               <span className="text-xl font-black tracking-tight text-brand-blue">
-                ADLINE <span className="text-amber-500">KSA</span>
+                Adline <span className="text-amber-500">KSA</span>
               </span>
               <span className="text-[10px] text-slate-500 block font-arabic leading-none font-semibold">
                 خط الإعلان للطباعة
@@ -31,22 +31,22 @@ export const Navbar: React.FC = () => {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-7 text-sm font-bold text-slate-700">
             <Link href="/" className="hover:text-brand-blue transition-colors">
-              Home
+              الرئيسية
             </Link>
             <Link href="/categories" className="hover:text-brand-blue transition-colors">
-              Categories
+              الفئات
             </Link>
             <Link href="/products" className="hover:text-brand-blue transition-colors">
-              Products
+              المنتجات
             </Link>
             <Link href="/about" className="hover:text-brand-blue transition-colors">
-              About Us
+              من نحن
             </Link>
             <Link href="/contact" className="hover:text-brand-blue transition-colors">
-              Contact
+              اتصل بنا
             </Link>
             <Link href="/quote" className="hover:text-brand-blue transition-colors">
-              Qoute
+              طلب عرض سعر
             </Link>
           </nav>
 
@@ -58,7 +58,7 @@ export const Navbar: React.FC = () => {
             >
               🛒
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-xs font-black flex items-center justify-center shadow-md animate-bounce">
+                <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-amber-400 text-slate-950 text-xs font-black flex items-center justify-center shadow-md animate-bounce">
                   {itemCount}
                 </span>
               )}
@@ -68,14 +68,14 @@ export const Navbar: React.FC = () => {
               href="/dashboard"
               className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 hover:bg-slate-200 transition-all"
             >
-              👤 Dashboard
+              👤 لوحة التحكم
             </Link>
 
             <Link
               href="/admin/login"
               className="hidden lg:inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-amber-400/20 text-amber-900 border border-amber-400/40 text-xs font-black hover:bg-amber-400/40 transition-all"
             >
-              🔐 Admin
+              🔐 الإدارة
             </Link>
 
             {/* Mobile Menu Button */}

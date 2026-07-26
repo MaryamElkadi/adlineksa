@@ -57,76 +57,9 @@ export const Hero: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Column: Headlines & CTA */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-amber-400/60 text-slate-900 text-xs font-bold shadow-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-              <span className="text-brand-blue font-black">  منصة الطباعة الرقمية الحديثة في المملكة العربية السعودية
-</span>
-            </div>
-
-           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-brand-heading tracking-tight leading-[1.2]">
-  خط الاعلان تجربة الطباعة المخصصة
-  <br />
-  <span className="bg-gradient-to-r from-brand-primary via-blue-500 to-amber-400 bg-clip-text text-transparent">
-    بأسعار فورية وحساب مباشر
-  </span>
-</h1>
-            <p className="text-base sm:text-lg text-brand-body font-medium leading-loose max-w-2xl">
-  استمتع بتجربة طباعة احترافية وسهلة. اختر مواصفات المنتج، استعرض المعاينة، واحصل على السعر فورًا، ثم أرسل طلبك خلال أقل من دقيقة مع توصيل سريع إلى جميع مناطق المملكة العربية السعودية.
-</p>
-
-            {/* Feature Pills */}
-            <div className="flex flex-wrap gap-3 pt-2 text-xs font-bold text-slate-700">
-              <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
-                 ⚡ تسعير فوري
-              </span>
-              <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
-                🚚 شحن سريع خلال 48 ساعة
-              </span>
-              <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
-                🎨 مراجعة مجانية للتصميم
-              </span>
-            </div>
-
-            {/* Action Buttons */}
-        {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link href="/products">
-                <Button size="lg" variant="yellow" className="w-full sm:w-auto text-slate-950 font-black">
-                  ابدأ طلبك الآن →
-                </Button>
-              </Link>
-              <Link href="/categories">
-                <Button
-                  size="lg"
-                  variant="primary"
-                  className="w-full sm:w-auto !text-slate-800 hover:!text-amber-300 font-bold border border-blue-400/30"
-                >
-                  تصفح جميع الأقسام
-                </Button>
-              </Link>
-            </div>
-
-            {/* Live Stats Bar */}
-            <div className="pt-8 border-t border-slate-200 grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-2xl sm:text-3xl font-black text-brand-blue">50,000+</div>
-                <div className="text-xs text-slate-500 font-semibold mt-0.5">طلب تم تسليمه</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-black text-amber-500">99.8%</div>
-                <div className="text-xs text-slate-500 font-semibold mt-0.5">ضمان دقة الألوان</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-black text-brand-blue">4.9 / 5.0</div>
-                <div className="text-xs text-slate-500 font-semibold mt-0.5">+500 تقييم موثق</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Printnes-Inspired Animated Live Interactive Configurator Preview */}
-          <div className="lg:col-span-5 relative">
+          
+          {/* Left Column: Printnes-Inspired Animated Live Interactive Configurator Preview */}
+          <div className="lg:col-span-5 relative order-2 lg:order-1">
             {/* Animated Floating Chips */}
             <div className="absolute -top-4 -left-4 z-20 bg-white border border-amber-400 shadow-xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-float">
               <span className="text-2xl">✨</span>
@@ -234,6 +167,76 @@ export const Hero: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Right Column: Headlines & CTA (Text side for RTL layout) */}
+          <div className="lg:col-span-7 space-y-6 text-right order-1 lg:order-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-amber-400/60 text-slate-900 text-xs font-bold shadow-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+              <span className="text-brand-blue font-black">
+                منصة الطباعة الرقمية الحديثة في المملكة العربية السعودية
+              </span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-brand-heading tracking-tight leading-[1.2]">
+              خط الاعلان تجربة الطباعة المخصصة
+              <br />
+              <span className="bg-gradient-to-r from-brand-primary via-blue-500 to-amber-400 bg-clip-text text-transparent">
+                بأسعار فورية وحساب مباشر
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-brand-body font-medium leading-loose max-w-2xl ms-auto">
+              استمتع بتجربة طباعة احترافية وسهلة. اختر مواصفات المنتج، استعرض المعاينة، واحصل على السعر فورًا، ثم أرسل طلبك خلال أقل من دقيقة مع توصيل سريع إلى جميع مناطق المملكة العربية السعودية.
+            </p>
+
+            {/* Feature Pills */}
+            <div className="flex flex-wrap gap-3 pt-2 text-xs font-bold text-slate-700 justify-start">
+              <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
+                ⚡ تسعير فوري
+              </span>
+              <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
+                🚚 شحن سريع خلال 48 ساعة
+              </span>
+              <span className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
+                🎨 مراجعة مجانية للتصميم
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-start">
+              <Link href="/products">
+                <Button size="lg" variant="yellow" className="w-full sm:w-auto text-slate-950 font-black">
+                  ابدأ طلبك الآن ←
+                </Button>
+              </Link>
+              <Link href="/categories">
+                <Button
+                  size="lg"
+                  variant="primary"
+                  className="w-full sm:w-auto !text-slate-800 hover:!text-amber-300 font-bold border border-blue-400/30"
+                >
+                  تصفح جميع الأقسام
+                </Button>
+              </Link>
+            </div>
+
+            {/* Live Stats Bar */}
+            <div className="pt-8 border-t border-slate-200 grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-brand-blue">50,000+</div>
+                <div className="text-xs text-slate-500 font-semibold mt-0.5">طلب تم تسليمه</div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-500">99.8%</div>
+                <div className="text-xs text-slate-500 font-semibold mt-0.5">ضمان دقة الألوان</div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-black text-brand-blue">4.9 / 5.0</div>
+                <div className="text-xs text-slate-500 font-semibold mt-0.5">+500 تقييم موثق</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>

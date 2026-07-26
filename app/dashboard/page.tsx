@@ -4,11 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
+interface OrderItem {
+  productId: string;
+  productName: string;
+  image?: string;
+  size?: string;
+  material?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  customNotes?: string;
+}
+
 interface Order {
   _id: string;
   number: string;
   date: string;
-  items: string;
+  items: string | OrderItem[]; // Allow both string and array of objects
   total: number;
   status: string;
   step: number;
@@ -74,6 +86,46 @@ export default function DashboardPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Helper function to render items properly
+  const renderOrderItems = (items: string | OrderItem[]) => {
+    if (typeof items === 'string') {
+      return <span className="text-xs font-bold text-slate-700">{items}</span>;
+    }
+    
+    if (Array.isArray(items) && items.length > 0) {
+      return (
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={item.productId || index} className="text-xs font-bold text-slate-700 border-b border-slate-100 pb-2 last:border-0">
+              <div className="flex justify-between">
+                <span>{item.productName}</span>
+                <span>{item.quantity} × {item.unitPrice} ر.س</span>
+              </div>
+              {item.size && <div className="text-slate-500 font-normal">المقاس: {item.size}</div>}
+              {item.material && <div className="text-slate-500 font-normal">المادة: {item.material}</div>}
+              {item.customNotes && <div className="text-slate-500 font-normal text-xs">ملاحظات: {item.customNotes}</div>}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return <span className="text-xs font-bold text-slate-700">لا توجد منتجات</span>;
+  };
+
+  // Helper function to get items as string for display in modals
+  const getItemsAsString = (items: string | OrderItem[]): string => {
+    if (typeof items === 'string') {
+      return items;
+    }
+    
+    if (Array.isArray(items)) {
+      return items.map(item => `${item.productName} (${item.quantity})`).join('، ');
+    }
+    
+    return '';
+  };
+
   useEffect(() => {
     async function fetchOrders() {
       try {
@@ -81,7 +133,7 @@ export default function DashboardPage() {
         const res = await fetch('/api/orders');
         if (res.ok) {
           const data = await res.json();
-          setOrders(data);
+          setOrders(Array.isArray(data) ? data : []);
         } else {
           setOrders([
             {
@@ -130,9 +182,9 @@ export default function DashboardPage() {
       _id: Date.now().toString(),
       number: `RFQ-${Math.floor(1000 + Math.random() * 9000)}`,
       date: new Date().toISOString().split('T')[0],
-      title: formData.get('title') as string,
-      specs: formData.get('specs') as string,
-      quantity: Number(formData.get('quantity')),
+      title: (formData.get('title') as string) || 'طلب جديد',
+      specs: (formData.get('specs') as string) || 'لا توجد مواصفات',
+      quantity: Number(formData.get('quantity')) || 1,
       status: 'قيد الدراسة',
     };
     setQuotes([newQ, ...quotes]);
@@ -184,9 +236,9 @@ export default function DashboardPage() {
           { id: 'proofs' as TabType, label: `🔍 مراجعة التصاميم ${proofStatus === 'pending' ? '(1 بانتظار الموافقة)' : ''}` },
           { id: 'artworks' as TabType, label: '📁 مكتبة التصاميم' },
           { id: 'tickets' as TabType, label: '💬 تذاكر الدعم الفني' },
-        ].map((tb) => (
+        ].map((tb, index) => (
           <button
-            key={tb.id}
+            key={tb.id || `tab-${index}`}
             onClick={() => setActiveTab(tb.id)}
             className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
               activeTab === tb.id
@@ -205,11 +257,11 @@ export default function DashboardPage() {
           <h2 className="text-lg font-black text-slate-900">أعمال الطباعة الحالية والسابقة</h2>
           {loading ? (
             <div className="text-center py-12 text-slate-400 font-medium">جاري تحميل الطلبات...</div>
-          ) : orders.length === 0 ? (
+          ) : !orders || orders.length === 0 ? (
             <div className="text-center py-12 text-slate-400 font-medium">لا توجد طلبات حصرية حالياً.</div>
           ) : (
-            orders.map((ord) => (
-              <div key={ord._id} className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs hover:shadow-md transition-all">
+            orders.map((ord, index) => (
+              <div key={ord._id || `order-${index}`} className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs hover:shadow-md transition-all">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-4">
                   <div>
                     <span className="text-xs font-black text-amber-600">{ord.number}</span>
@@ -223,7 +275,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="text-xs font-bold text-slate-700">{ord.items}</div>
+                {/* Render items properly */}
+                <div className="text-xs font-bold text-slate-700">
+                  {renderOrderItems(ord.items)}
+                </div>
 
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-[11px] font-bold text-slate-400">
@@ -235,7 +290,7 @@ export default function DashboardPage() {
                   <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
                     <div
                       className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500 shadow-2xs"
-                      style={{ width: `${(ord.step / 4) * 100}%` }}
+                      style={{ width: `${((ord.step || 1) / 4) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -285,8 +340,8 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          {quotes.map((q) => (
-            <div key={q._id} className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs hover:shadow-md transition-all">
+          {quotes && quotes.map((q, index) => (
+            <div key={q._id || `quote-${index}`} className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs hover:shadow-md transition-all">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -302,7 +357,7 @@ export default function DashboardPage() {
 
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1 text-xs">
                 <p className="text-slate-600 font-medium">المواصفات المطلوب تسعيرها: <span className="font-bold text-slate-800">{q.specs}</span></p>
-                <p className="text-slate-600 font-medium">الكمية المطلوبة: <span className="font-bold text-slate-800">{q.quantity.toLocaleString()} قطعة</span></p>
+                <p className="text-slate-600 font-medium">الكمية المطلوبة: <span className="font-bold text-slate-800">{(q.quantity || 0).toLocaleString()} قطعة</span></p>
               </div>
 
               {q.status === 'تم التسعير' && q.priceOffer && (
@@ -384,7 +439,7 @@ export default function DashboardPage() {
       {/* Artworks Tab */}
       {activeTab === 'artworks' && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-xs">
-          <div className="text-5xl animate-bounce">📁</div>
+          <div className="text-5xl">📁</div>
           <h3 className="text-lg font-black text-slate-900">ملفات التصاميم المحفوظة الخاصة بك</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto font-medium leading-relaxed">
             ملفات PDF عالية الدقة والشعارات المتجهة والقوالب المخصصة المحفوظة ليسهل عليك إعادة طلبها بنقرة واحدة.
@@ -440,7 +495,7 @@ export default function DashboardPage() {
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-400">المنتجات:</span>
-                  <span className="font-bold text-slate-800">{selectedOrder.items}</span>
+                  <span className="font-bold text-slate-800">{getItemsAsString(selectedOrder.items)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">تاريخ الطلب:</span>
@@ -495,7 +550,7 @@ export default function DashboardPage() {
             <div className="p-4 bg-slate-50 rounded-2xl border space-y-3 text-xs">
               <div className="flex justify-between"><span className="text-slate-500">اسم العميل:</span><span className="font-bold">سامي العتيبي</span></div>
               <div className="flex justify-between"><span className="text-slate-500">التاريخ:</span><span className="font-bold">{selectedInvoice.date}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">المنتج:</span><span className="font-bold">{selectedInvoice.items}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">المنتج:</span><span className="font-bold">{getItemsAsString(selectedInvoice.items)}</span></div>
               <div className="border-t pt-2 flex justify-between font-black text-sm text-slate-900"><span>الإجمالي:</span><span>{selectedInvoice.total} ر.س</span></div>
             </div>
 
