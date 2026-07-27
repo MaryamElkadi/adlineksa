@@ -681,7 +681,63 @@ export default function AdminProductsPage() {
               </div>
             </div>
           </div>
+<div className="bg-slate-50 p-4 rounded-2xl border space-y-3">
+    <span className="text-xs font-black">
+        ظهور المنتج في الصفحة الرئيسية
+    </span>
 
+    <div className="grid grid-cols-2 gap-4">
+
+        <label className="flex items-center gap-2">
+            <input
+                type="checkbox"
+                checked={formData.featured}
+                onChange={(e)=>setFormData({
+                    ...formData,
+                    featured:e.target.checked
+                })}
+            />
+            منتج مميز
+        </label>
+
+        <label className="flex items-center gap-2">
+            <input
+                type="checkbox"
+                checked={formData.bestseller}
+                onChange={(e)=>setFormData({
+                    ...formData,
+                    bestseller:e.target.checked
+                })}
+            />
+            الأكثر مبيعاً
+        </label>
+
+        <label className="flex items-center gap-2">
+            <input
+                type="checkbox"
+                checked={formData.mostUsed}
+                onChange={(e)=>setFormData({
+                    ...formData,
+                    mostUsed:e.target.checked
+                })}
+            />
+            الأكثر استخداماً
+        </label>
+
+        <label className="flex items-center gap-2">
+            <input
+                type="checkbox"
+                checked={formData.newArrival}
+                onChange={(e)=>setFormData({
+                    ...formData,
+                    newArrival:e.target.checked
+                })}
+            />
+            أحدث المنتجات
+        </label>
+
+    </div>
+</div>
           {/* Description */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">وصف المنتج *</label>
@@ -694,6 +750,7 @@ export default function AdminProductsPage() {
               className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-xs text-slate-800 outline-none"
             />
           </div>
+          
 
           {/* Modal Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">

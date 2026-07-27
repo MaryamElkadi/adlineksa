@@ -108,7 +108,7 @@ export interface Product {
   bestseller?: boolean;
   newArrival?: boolean;
   active?: boolean;
-
+  mostUsed?: boolean;
   // SEO
   seoTitle?: string;
   seoDescription?: string;

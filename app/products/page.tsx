@@ -1,47 +1,40 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Category, Product } from '@/types';
 import { api } from '@/services/api';
 import { ProductCard } from '@/components/cards/ProductCard';
-import { SmartConfigurator } from '@/components/product/SmartConfigurator';
-import { ProductGallery } from '@/components/product/ProductGallery';
 import { Input } from '@/components/forms/Input';
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
   const categoryParam = searchParams?.get('category') || undefined;
-  const slugParam = searchParams?.get('slug');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     api.getCategories().then(setCategories).catch(console.error);
   }, []);
 
   useEffect(() => {
+    setIsLoading(true);
     api.getProducts(categoryParam)
       .then((data) => {
         setProducts(data);
-        // Set initial selected product based on slugParam or fall back to the first product
-        const initial = data.find((product) => product.slug === slugParam) || data[0] || null;
-        setSelectedProduct(initial);
       })
-      .catch(console.error);
-  }, [categoryParam, slugParam]);
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, [categoryParam]);
 
   const filteredProducts = useMemo(
     () =>
       products.filter(
         (product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (product.nameAr || product.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.categorySlug.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     [products, searchQuery]
@@ -49,90 +42,39 @@ export default function ProductsPage() {
 
   const selectedCategory = categories.find((category) => category.slug === categoryParam);
 
-  const handleSelectProduct = (product: Product) => {
-    // 1. Update active product state
-    setSelectedProduct(product);
-
-    // 2. Update URL query params without full page reload
-    const params = new URLSearchParams(searchParams?.toString());
-    params.set('slug', product.slug);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-
-    // 3. Smooth scroll to the hero/details section at the top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  if (!selectedProduct && products.length === 0) {
-    return (
-      <div dir="rtl" className="max-w-7xl mx-auto px-4 py-16 text-center text-slate-500">
-        لا توجد منتجات متاحة حالياً.
-      </div>
-    );
-  }
-
   return (
-    <div dir="rtl" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-      {selectedProduct && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <div>
-            {/* Adding key={selectedProduct.id} forces the gallery to reset selected thumbnail */}
-            <ProductGallery
-              key={`gallery-${selectedProduct.id}`}
-              images={selectedProduct.gallery?.length ? selectedProduct.gallery : [selectedProduct.image]}
-              alt={selectedProduct.name}
-            />
-            <div className="mt-6 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">
-              <h1 className="text-2xl font-black text-white">{selectedProduct.name}</h1>
-              <p className="text-xs text-slate-300 leading-relaxed">{selectedProduct.description}</p>
-              <div className="flex items-center gap-4 text-xs font-semibold text-amber-400 pt-2 border-t border-slate-800">
-                <span>★ تقييم {selectedProduct.rating}</span>
-                <span>• {selectedProduct.reviewCount} مراجعة</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Adding key={selectedProduct.id} forces the configurator options to reset for the new product */}
-          <SmartConfigurator
-            key={`configurator-${selectedProduct.id}`}
-            product={selectedProduct}
+    <div dir="rtl" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+      {/* Header & Search Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-200">
+        <div>
+          <h1 className="text-3xl font-black text-brand-heading">
+            {selectedCategory ? selectedCategory.nameAr || selectedCategory.name : 'جميع المنتجات'}
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {isLoading ? 'جاري التحميل...' : `${filteredProducts.length} منتج`}
+          </p>
+        </div>
+        <div className="w-full sm:w-80">
+          <Input
+            placeholder="البحث عن المنتجات..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
           />
         </div>
-      )}
+      </div>
 
-      <div className="pt-12 border-t border-slate-200 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-brand-heading">
-              {selectedCategory?.nameAr || 'جميع المنتجات'}
-            </h2>
-            <p className="text-brand-body">{filteredProducts.length} منتج</p>
-          </div>
-          <div className="w-full sm:w-72">
-            <Input
-              placeholder="البحث عن المنتجات..."
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </div>
+      {/* Product Catalog Grid */}
+      {!isLoading && filteredProducts.length === 0 ? (
+        <div className="py-20 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">
+          لا توجد منتجات مطابقة للبحث حالياً.
         </div>
-
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <button
-              key={product.id}
-              type="button"
-              onClick={() => handleSelectProduct(product)}
-              className={`text-right cursor-pointer transition-all rounded-2xl p-1 ${
-                selectedProduct?.id === product.id
-                  ? 'ring-2 ring-amber-400 scale-[1.02]'
-                  : 'hover:scale-[1.01]'
-              }`}
-            >
-              <ProductCard product={product} />
-            </button>
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

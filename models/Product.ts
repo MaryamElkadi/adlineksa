@@ -28,6 +28,8 @@ const ProductSchema = new Schema({
   active: { type: Boolean, default: true },
   seoTitle: { type: String, default: "" },
   seoDescription: { type: String, default: "" },
+  mostUsed: { type: Boolean, default: false },   // <-- add this
+
 }, { timestamps: true });
 
 export default models.Product || model("Product", ProductSchema);
