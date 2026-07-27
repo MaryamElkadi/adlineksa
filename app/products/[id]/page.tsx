@@ -21,6 +21,7 @@ export default function ProductDetailPage() {
 
     setIsLoading(true);
 
+    // Fetch primary product details
     api
       .getProducts()
       .then((data) => {
@@ -63,7 +64,7 @@ export default function ProductDetailPage() {
     <div dir="rtl" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
       {/* Primary Product Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-        {/* Left Column: Gallery & Description */}
+        {/* Left Column: Gallery & Details */}
         <div className="space-y-6">
           <ProductGallery
             key={`gallery-${product.id}`}
@@ -102,18 +103,18 @@ export default function ProductDetailPage() {
       {/* Related Products Section */}
       {relatedProducts.length > 0 && (
         <div className="pt-12 border-t border-slate-200 space-y-6">
-          <div className="text-center sm:text-right space-y-1">
-            <div className="text-amber-500 text-lg tracking-widest font-black">
-              ★★★★★
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-brand-heading">
-              قد يعجبك أيضاً
+          <div>
+            <h2 className="text-2xl font-black text-brand-heading">
+              منتجات ذات صلة
             </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              قد يعجبك أيضاً هذه المنتجات في نفس الفئة
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.slice(0, 4).map((relatedProduct) => (
-              <ProductCard key={relatedProduct.id} product={relatedProduct} />
+            {relatedProducts.slice(0, 4).map((related) => (
+              <ProductCard key={related.id} product={related} />
             ))}
           </div>
         </div>
