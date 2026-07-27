@@ -43,43 +43,61 @@ export async function PATCH(
   request: Request,
   context: RouteContext<"/api/products/[id]">
 ) {
-  const { id } = await context.params;
+  try {
+    const { id } = await context.params;
 
-  await connectToDatabase();
+    await connectToDatabase();
 
-  const body = await request.json();
+    const body = await request.json();
 
-  const product = await Product.findByIdAndUpdate(id, body, {
-    new: true,
-    runValidators: true,
-  });
+    const product = await Product.findByIdAndUpdate(id, body, {
+      new: true,
+      runValidators: true,
+    });
 
-  if (!product) {
+    if (!product) {
+      return NextResponse.json(
+        { message: "Product not found." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(serializeDocument(product));
+  } catch (error) {
+    console.error(error);
+
     return NextResponse.json(
-      { message: "Product not found." },
-      { status: 404 }
+      { message: "Could not update product." },
+      { status: 500 }
     );
   }
-
-  return NextResponse.json(serializeDocument(product));
 }
 
 export async function DELETE(
   _request: Request,
   context: RouteContext<"/api/products/[id]">
 ) {
-  const { id } = await context.params;
+  try {
+    const { id } = await context.params;
 
-  await connectToDatabase();
+    await connectToDatabase();
 
-  const product = await Product.findByIdAndDelete(id);
+    const product = await Product.findByIdAndDelete(id);
 
-  if (!product) {
+    if (!product) {
+      return NextResponse.json(
+        { message: "Product not found." },
+        { status: 404 }
+      );
+    }
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error(error);
+
     return NextResponse.json(
-      { message: "Product not found." },
-      { status: 404 }
+      { message: "Could not delete product." },
+      { status: 500 }
     );
   }
-
-  return new NextResponse(null, { status: 204 });
 }
