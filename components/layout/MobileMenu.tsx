@@ -12,7 +12,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex" dir="rtl">
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -20,7 +20,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer */}
-      <div className="relative ml-auto w-4/5 max-w-sm h-full bg-white border-l border-slate-200 p-6 flex flex-col justify-between z-10 shadow-2xl">
+      <div className="relative mr-auto w-4/5 max-w-sm h-full bg-white border-r border-slate-200 p-6 flex flex-col justify-between z-10 shadow-2xl">
         <div>
           <div className="flex items-center justify-between pb-6 border-b border-slate-200">
             <span className="text-lg font-black text-brand-blue">
@@ -36,34 +36,34 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
 
           <nav className="flex flex-col gap-4 mt-6 text-base font-bold text-slate-800">
             <Link href="/" onClick={onClose} className="hover:text-brand-blue">
-              Home
+              الرئيسية
             </Link>
             <Link href="/categories" onClick={onClose} className="hover:text-brand-blue">
-              Product Categories
+              فئات المنتجات
             </Link>
             <Link href="/products" onClick={onClose} className="hover:text-brand-blue">
-              All Products & Configurator
+              جميع المنتجات والمُهِّيئ
             </Link>
             <Link href="/cart" onClick={onClose} className="hover:text-brand-blue">
-              Shopping Cart
+              سلة التسوق
             </Link>
             <Link href="/dashboard" onClick={onClose} className="hover:text-brand-blue">
-              User Dashboard
+              لوحة تحكم المستخدم
             </Link>
             <Link href="/admin/login" onClick={onClose} className="text-amber-600 font-extrabold hover:text-brand-blue">
-              Admin Portal 🔐
+              بوابة المشرف 🔐
             </Link>
             <Link href="/about" onClick={onClose} className="hover:text-brand-blue">
-              About Us
+              من نحن
             </Link>
             <Link href="/contact" onClick={onClose} className="hover:text-brand-blue">
-              Contact Support
+              اتصل بالدعم
             </Link>
           </nav>
         </div>
 
         <div className="pt-6 border-t border-slate-200 text-xs font-bold text-brand-blue text-center">
-          🇸🇦 Express Shipping Nationwide
+          🇸🇦 شحن سريع لكافة أنحاء المملكة
         </div>
       </div>
     </div>

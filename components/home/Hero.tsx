@@ -173,12 +173,12 @@ export const Hero: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-amber-400/60 text-slate-900 text-xs font-bold shadow-sm">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
               <span className="text-brand-blue font-black">
-                منصة الطباعة الرقمية الحديثة في المملكة العربية السعودية
+                منصة الخدمات الاعلانية الرقمية الحديثة في المملكة العربية السعودية
               </span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-brand-heading tracking-tight leading-[1.2]">
-              خط الاعلان تجربة الطباعة المخصصة
+              خط الاعلان تجربة خدمات اعلانية متكاملة
               <br />
               <span className="bg-gradient-to-r from-brand-primary via-blue-500 to-amber-400 bg-clip-text text-transparent">
                 بأسعار فورية وحساب مباشر

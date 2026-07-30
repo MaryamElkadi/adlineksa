@@ -51,20 +51,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </p>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">
-                يبدأ من
-              </span>
-              <span className="text-lg font-black text-brand-blue">
-                {formatCurrency(product.basePrice)}
-              </span>
-            </div>
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between pt-3 border-t border-slate-100">
 
-            <Button size="sm" variant="yellow">
-              تخصيص ←
-            </Button>
-          </div>
+    <div>
+        <span className="text-[10px] text-slate-400 block">
+            يبدأ من
+        </span>
+
+        <span className="text-lg font-black text-brand-blue">
+            {formatCurrency(product.basePrice)}
+        </span>
+    </div>
+
+    <Button
+        size="sm"
+        variant="yellow"
+        className="w-full sm:w-auto"
+    >
+        تخصيص →
+    </Button>
+
+</div>
         </div>
       </div>
     </Link>

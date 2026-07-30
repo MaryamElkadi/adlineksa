@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/hooks/useCart';
 import { MobileMenu } from './MobileMenu';
-
+import Image from "next/image";
 export const Navbar: React.FC = () => {
   const { itemCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,9 +15,16 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-brand-blue flex items-center justify-center text-amber-400 font-black text-xl shadow-md group-hover:scale-105 transition-transform">
-              A
-            </div>
+            <div className="w-20 h-20 rounded-xl overflow-hidden  group-hover:scale-105 transition-transform">
+  <Image
+    src="/LOGO.jpeg"
+    alt="Adline KSA"
+    width={40}
+    height={40}
+    className="w-full h-full object-cover"
+    priority
+  />
+</div>
             <div>
               <span className="text-xl font-black tracking-tight text-brand-blue">
                 Adline <span className="text-amber-500">KSA</span>
