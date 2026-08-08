@@ -17,32 +17,37 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
 
-    try {
-      setLoading(true);
-      setError('');
+  try {
+    setLoading(true);
+    setError('');
 
-      const res = await api.login({
-        email,
-        password,
-      });
-      
- localStorage.setItem("user", JSON.stringify(res.user));
-if (res.user.role === "admin") {
-    router.push("/admin");
-} else {
-    router.push("/dashboard");
-}
+    const res = await api.login({
+      email,
+      password,
+    });
 
-router.refresh();
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
-    } finally {
-      setLoading(false);
+    // Save logged-in user
+    localStorage.setItem("user", JSON.stringify(res.user));
+
+    // 🔥 Tell Navbar that authentication changed
+    window.dispatchEvent(new Event("auth-change"));
+
+    // Navigate
+    if (res.user.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
     }
+
+  } catch (err: any) {
+    setError(err.message || 'Login failed');
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div

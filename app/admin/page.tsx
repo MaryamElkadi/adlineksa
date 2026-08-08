@@ -66,7 +66,20 @@ export default function AdminDashboardPage() {
   // Filter States
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'orders' | 'users'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'users' | 'quotations'>('orders');
+  // New state for quotations
+  const [quotations, setQuotations] = useState<UserOrder[]>([]);
+  // Fetch quotations
+  useEffect(() => {
+    if (activeTab === 'quotations') {
+      fetch('/api/quotes')
+        .then((res) => res.json())
+        .then((data) => {
+          setQuotations(data || []);
+        })
+        .catch((err) => console.error('Failed to load quotations', err));
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     fetch('/api/dashboard')
