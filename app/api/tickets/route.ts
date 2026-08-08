@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { connectToDatabase } from "@/lib/mongodb";
-import Quotation from "@/models/Quotation";
+import Ticket from "@/models/Ticket";
 import { getCurrentUserId } from "@/lib/currentUser";
 
-function serializeQuotation(quotation: any) {
-  const value = quotation.toObject();
+function serializeTicket(ticket: any) {
+  const value = ticket.toObject();
 
   return {
     ...value,
@@ -26,26 +27,29 @@ export async function GET() {
 
     await connectToDatabase();
 
-    const quotations = await Quotation.find({
+    const tickets = await Ticket.find({
       userId,
     }).sort({
       createdAt: -1,
     });
 
     return NextResponse.json(
-      quotations.map(serializeQuotation)
+      tickets.map(serializeTicket)
     );
   } catch (error) {
-    console.error("GET QUOTATIONS ERROR:", error);
+    console.error(
+      "GET TICKETS ERROR:",
+      error
+    );
 
     return NextResponse.json(
-      { message: "Could not load quotations" },
+      {
+        message: "Could not load tickets",
+      },
       { status: 500 }
     );
   }
 }
-
-import User from "@/models/User";
 
 export async function POST(request: Request) {
   try {
@@ -60,10 +64,11 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    if ((!body.name && !body.title) || !body.quantity) {
+    if (!body.subject || !body.message) {
       return NextResponse.json(
         {
-          message: "Title/Name and quantity are required.",
+          message:
+            "Subject and message are required.",
         },
         { status: 400 }
       );
@@ -71,27 +76,32 @@ export async function POST(request: Request) {
 
     await connectToDatabase();
 
-    const user = await User.findById(userId);
-
-    const quotation = await Quotation.create({
-      title: body.title || body.name || "طلب تسعير",
-      specs: body.specs || body.details || "",
-      name: body.name || (user ? `${user.firstName} ${user.lastName}` : "عميل"),
-      email: body.email || (user ? user.email : "user@example.com"),
-      phone: body.phone || (user && user.phone ? user.phone : "غير مدخل"),
+    const ticket = await Ticket.create({
       ...body,
+
       userId,
+
+      ticketNumber: `TKT-${Date.now()
+        .toString()
+        .slice(-8)}`,
+
+      status: "Open",
     });
 
     return NextResponse.json(
-      serializeQuotation(quotation),
+      serializeTicket(ticket),
       { status: 201 }
     );
   } catch (error) {
-    console.error("CREATE QUOTATION ERROR:", error);
+    console.error(
+      "CREATE TICKET ERROR:",
+      error
+    );
 
     return NextResponse.json(
-      { message: "Could not create quotation" },
+      {
+        message: "Could not create ticket",
+      },
       { status: 500 }
     );
   }

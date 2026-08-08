@@ -528,17 +528,17 @@ export default function AdminProductsPage() {
                     />
                   </div>
                   <div className="flex-1 flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">سعر القطعة (EGP):</span>
+                    <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">السعر لهذه الكمية (ر.س):</span>
                     <Input
                       type="number"
                       step="0.01"
-                      placeholder="5.50"
+                      placeholder="150"
                       value={item.unitPrice}
                       onChange={(e) => handleQuantityChange(idx, 'unitPrice', Number(e.target.value))}
                     />
                   </div>
                   <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-1.5 rounded-lg whitespace-nowrap">
-                    الإجمالي: {formatCurrency((item.quantity || 0) * (item.unitPrice || 0))}
+                    السعر المحدد: {formatCurrency(item.unitPrice || 0)}
                   </span>
                   <button
                     type="button"

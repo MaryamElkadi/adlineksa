@@ -2,12 +2,24 @@ import { Schema, model, models } from "mongoose";
 
 const QuoteSchema = new Schema(
   {
+    // IMPORTANT:
+    // The quote belongs to this user.
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
     customerName: {
       type: String,
       required: true,
     },
 
-    company: String,
+    company: {
+      type: String,
+      default: "",
+    },
 
     email: {
       type: String,
@@ -19,9 +31,15 @@ const QuoteSchema = new Schema(
       required: true,
     },
 
-    whatsapp: String,
+    whatsapp: {
+      type: String,
+      default: "",
+    },
 
-    city: String,
+    city: {
+      type: String,
+      default: "",
+    },
 
     productType: {
       type: String,
@@ -33,20 +51,32 @@ const QuoteSchema = new Schema(
       required: true,
     },
 
-    width: Number,
+    width: {
+      type: Number,
+    },
 
-    height: Number,
+    height: {
+      type: Number,
+    },
 
-    material: String,
+    material: {
+      type: String,
+      default: "",
+    },
 
-    notes: String,
+    notes: {
+      type: String,
+      default: "",
+    },
 
     files: {
       type: [String],
       default: [],
     },
 
-    estimatedPrice: Number,
+    estimatedPrice: {
+      type: Number,
+    },
 
     adminReply: {
       type: String,
@@ -55,6 +85,14 @@ const QuoteSchema = new Schema(
 
     status: {
       type: String,
+      enum: [
+        "New",
+        "Pending",
+        "In Progress",
+        "Quoted",
+        "Approved",
+        "Rejected",
+      ],
       default: "New",
     },
   },

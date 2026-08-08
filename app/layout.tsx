@@ -12,10 +12,15 @@ const merriweather = Merriweather({
   display: "swap",
 });
 
+
 export const metadata: Metadata = {
   title: "Adline KSA | Modern Printing Platform Saudi Arabia",
-  description:
-    "Saudi Arabia premier digital printing and advertising platform.",
+  description: "Saudi Arabia premier digital printing and advertising platform.",
+  icons: {
+    icon: "/LOGO.jpeg",
+    shortcut: "/LOGO.jpeg",
+    apple: "/LOGO.jpeg",
+  },
 };
 
 export default function RootLayout({

@@ -20,21 +20,28 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [customNotes, setCustomNotes] = useState('');
   const [fileUploaded, setFileUploaded] = useState<string | null>(null);
   const [isAdded, setIsAdded] = useState(false);
+  const [needDesign, setNeedDesign] = useState(false);
+  const [designBrief, setDesignBrief] = useState('');
 
-  // Multipliers
-  const sizeMult = selectedSize.includes('مربع') || selectedSize.includes('Square') ? 0.9 : selectedSize.includes('كبير') || selectedSize.includes('Large') ? 1.4 : 1.0;
-  const matMult = selectedMaterial.includes('قطن') || selectedMaterial.includes('Cotton') ? 1.5 : selectedMaterial.includes('مخمل') || selectedMaterial.includes('Velvet') ? 1.25 : 1.0;
-  const lamAddon = lamination === 'foil' ? 0.5 : lamination === 'velvet' ? 0.2 : lamination === 'gloss' ? 0.1 : 0;
+  // Direct tier price as written in the box
+  const matchingTier = product.configurableQuantityTiers?.find((t) => t.quantity === quantity);
+  const baseTierPrice = matchingTier
+    ? matchingTier.unitPrice
+    : product.basePrice || 0;
 
-  const totalCalculatedPrice = calculateConfiguredPrice(
-    product.basePrice / (product.minQuantity || 100),
-    quantity,
-    sizeMult,
-    matMult,
-    lamAddon
-  );
+  const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
+  const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
+  const finishOption = product.configurableFinishes?.find((f) => f.label === lamination);
 
-  const unitCalculatedPrice = Math.round((totalCalculatedPrice / quantity) * 100) / 100;
+  const matAddon = matOption ? matOption.priceModifier : 0;
+  const sizeAddon = sizeOption ? sizeOption.priceModifier : 0;
+  const finishAddon = finishOption ? finishOption.priceModifier : 0;
+  const lamAddon = lamination === 'foil' ? 15 : lamination === 'velvet' ? 10 : lamination === 'gloss' ? 5 : 0;
+  const DESIGN_FEE = needDesign ? 75 : 0;
+
+  const totalCalculatedPrice = Math.max(0, baseTierPrice + matAddon + sizeAddon + finishAddon + lamAddon + DESIGN_FEE);
+  const unitCalculatedPrice = Math.round((totalCalculatedPrice / Math.max(1, quantity)) * 100) / 100;
+
 
   const handleAddToCart = () => {
     addItem({
@@ -49,7 +56,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       totalPrice: totalCalculatedPrice,
       customNotes,
       fileUrl: fileUploaded || undefined,
-    });
+    } as any);
 
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2500);
@@ -172,55 +179,136 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       </div>
 
       {/* قسم رفع الملفات */}
-      <div className="border-2 border-dashed border-slate-300 bg-slate-50 rounded-2xl p-4 text-center">
-        <label className="cursor-pointer block">
-          <span className="text-xs text-slate-800 font-bold block mb-1">
-            📁 رفع ملف التصميم (PDF, AI, PSD, PNG)
-          </span>
-          <span className="text-[11px] text-slate-500 block mb-2">
-            الحد الأقصى 50 ميجابايت. يوصى بنظام ألوان CMYK بدقة 300DPI.
-          </span>
-          <input
-            type="file"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.[0]) {
-                setFileUploaded(e.target.files[0].name);
-              }
-            }}
-          />
-          <span className="inline-block px-4 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-brand-blue font-bold shadow-xs hover:bg-slate-100">
-            {fileUploaded ? `الملف المرفق: ${fileUploaded}` : 'اختر الملف'}
-          </span>
-        </label>
-      </div>
+      {!needDesign ? (
+  <div className="border-2 border-dashed border-slate-300 bg-slate-50 rounded-2xl p-4 text-center">
+    <label className="cursor-pointer block">
+
+      <span className="text-xs font-bold block mb-2">
+        📁 رفع ملف التصميم
+      </span>
+
+      <span className="text-[11px] text-slate-500 block mb-3">
+        PDF, AI, PSD, PNG (حتى 50MB)
+      </span>
+
+      <input
+        type="file"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.[0]) {
+            setFileUploaded(e.target.files[0].name);
+          }
+        }}
+      />
+
+      <span className="inline-block px-4 py-2 rounded-lg bg-white border border-slate-300 font-bold text-brand-blue">
+        {fileUploaded
+          ? `الملف: ${fileUploaded}`
+          : 'اختر الملف'}
+      </span>
+
+    </label>
+  </div>
+) : (
+  <div className="rounded-2xl border border-amber-300 bg-white p-5">
+
+    <h3 className="font-black text-brand-blue mb-3">
+      أخبرنا عن التصميم الذي تريده
+    </h3>
+
+    <textarea
+      rows={5}
+      value={designBrief}
+      onChange={(e) => setDesignBrief(e.target.value)}
+      placeholder="مثال:
+- أريد تصميم بروشور لشركة عقارات
+- الألوان: الأزرق والذهبي
+- أضف شعار الشركة
+- تصميم احترافي وحديث..."
+      className="w-full rounded-xl border border-slate-300 p-3 text-sm resize-none focus:outline-none focus:border-brand-blue"
+    />
+
+    <p className="text-xs text-slate-500 mt-2">
+      سيقوم فريق التصميم بالتواصل معك لإعداد التصميم قبل بدء الطباعة.
+    </p>
+
+  </div>
+)}
+
+
+      <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+  <label className="flex items-start gap-3 cursor-pointer">
+    <input
+      type="checkbox"
+      checked={needDesign}
+      onChange={(e) => {
+        setNeedDesign(e.target.checked);
+
+        if (e.target.checked) {
+          setFileUploaded(null);
+        }
+      }}
+      className="mt-1 h-5 w-5 accent-amber-500"
+    />
+
+    <div>
+      <p className="font-bold text-slate-900">
+        لا أملك تصميمًا
+      </p>
+
+      <p className="text-xs text-slate-600 mt-1">
+        أريد من شركة Adline KSA تصميم المنتج لي قبل الطباعة.
+      </p>
+    </div>
+  </label>
+</div>
 
       {/* ملخص السعر */}
-      <div className="bg-brand-blue rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-white shadow-lg">
-        <div>
-          <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">السعر التقديري</span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-amber-400">
-              {formatCurrency(totalCalculatedPrice)}
-            </span>
-            <span className="text-xs text-slate-300 font-medium">
-              ({formatCurrency(unitCalculatedPrice)} / للقطعة)
-            </span>
-          </div>
-          <span className="text-[10px] text-emerald-300 font-bold block mt-0.5">
-            ✓ التوصيل المتوقع: 2-3 أيام عمل داخل المملكة العربية السعودية
-          </span>
-        </div>
+    {/* ملخص السعر */}
+<div className="bg-brand-blue rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-white shadow-lg">
 
-        <Button
-          size="lg"
-          variant="yellow"
-          onClick={handleAddToCart}
-          className="w-full sm:w-auto text-slate-950 font-black"
-        >
-          {isAdded ? '✓ تم الإضافة إلى السلة!' : 'إضافة المنتج المخصص إلى السلة'}
-        </Button>
+  <div className="w-full">
+
+    {/* Design fee */}
+    {needDesign && (
+      <div className="flex justify-between items-center border-b border-white/20 pb-2 mb-3 text-sm">
+        <span>🎨 خدمة التصميم</span>
+        <span className="font-bold">
+          {formatCurrency(75)}
+        </span>
       </div>
+    )}
+
+    <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+      السعر التقديري
+    </span>
+
+    <div className="flex items-baseline gap-2">
+      <span className="text-3xl font-black text-amber-400">
+        {formatCurrency(totalCalculatedPrice)}
+      </span>
+
+      <span className="text-xs text-slate-300">
+        ({formatCurrency(unitCalculatedPrice)} / للقطعة)
+      </span>
+    </div>
+
+    <span className="text-[10px] text-emerald-300 font-bold block mt-1">
+      ✓ التوصيل المتوقع: 2-3 أيام عمل داخل المملكة العربية السعودية
+    </span>
+
+  </div>
+
+  <Button
+    size="lg"
+    variant="yellow"
+    onClick={handleAddToCart}
+    className="w-full sm:w-auto text-slate-950 font-black"
+  >
+    {isAdded ? '✓ تم الإضافة إلى السلة!' : 'إضافة المنتج المخصص إلى السلة'}
+  </Button>
+
+</div>
     </div>
   );
 };

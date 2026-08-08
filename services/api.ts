@@ -1,10 +1,24 @@
 import { CartItem, Category, Product, UserOrder } from "@/types";
 
+interface LoginResponse {
+  user: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    role: "admin" | "user";
+  };
+}
+
+interface SignupResponse extends LoginResponse {}
+
 async function request<T>(
   url: string,
   options?: RequestInit
 ): Promise<T> {
   const response = await fetch(url, {
+    credentials: "include",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -23,9 +37,11 @@ async function request<T>(
 }
 
 export const api = {
+  // Categories
   getCategories: () =>
     request<Category[]>("/api/categories"),
 
+  // Products
   getProducts: (categorySlug?: string) =>
     request<Product[]>(
       `/api/products${
@@ -35,10 +51,10 @@ export const api = {
       }`
     ),
 
-  // NEW
   getProduct: (id: string) =>
     request<Product>(`/api/products/${id}`),
 
+  // Orders
   createOrder: (orderData: {
     items: CartItem[];
     total: number;
@@ -50,4 +66,47 @@ export const api = {
       method: "POST",
       body: JSON.stringify(orderData),
     }),
+
+  // Authentication
+signup: (data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+}) =>
+  request<{
+    success: boolean;
+    user: any;
+  }>("/api/auth/signup", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+
+  login: (data: {
+    email: string;
+    password: string;
+  }) =>
+    request<LoginResponse>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  me: () =>
+    request<LoginResponse>("/api/auth/me"),
+
+  logout: () =>
+    request("/api/auth/logout", {
+      method: "POST",
+    }),
+    getMyOrders: () =>
+  request("/api/orders"),
+
+getMyQuotes: () =>
+  request("/api/quotations"),
+getMyArtworks: () =>
+  request("/api/artworks"),
+
+getMyTickets: () =>
+  request("/api/tickets"),
 };

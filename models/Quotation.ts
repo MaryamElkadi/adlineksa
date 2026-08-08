@@ -2,20 +2,83 @@ import { Schema, model, models } from "mongoose";
 
 const QuotationSchema = new Schema(
   {
-    company: String,
-    name: String,
-    phone: String,
-    email: String,
-    city: String,
+    // Connect quotation to the logged-in user
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
-    category: String,
-    quantity: Number,
-    width: Number,
-    height: Number,
-    material: String,
+    title: {
+      type: String,
+      default: "",
+    },
 
-    deliveryDate: String,
-    details: String,
+    specs: {
+      type: String,
+      default: "",
+    },
+
+    company: {
+      type: String,
+      default: "",
+    },
+
+    name: {
+      type: String,
+      default: "عميل",
+    },
+
+    phone: {
+      type: String,
+      default: "غير مدخل",
+    },
+
+    email: {
+      type: String,
+      default: "user@example.com",
+    },
+
+    city: {
+      type: String,
+      default: "",
+    },
+
+    category: {
+      type: String,
+      default: "",
+    },
+
+    quantity: {
+      type: Number,
+      required: true,
+    },
+
+    width: {
+      type: Number,
+      default: 0,
+    },
+
+    height: {
+      type: Number,
+      default: 0,
+    },
+
+    material: {
+      type: String,
+      default: "",
+    },
+
+    deliveryDate: {
+      type: String,
+      default: "",
+    },
+
+    details: {
+      type: String,
+      default: "",
+    },
 
     attachments: {
       type: [String],
