@@ -39,6 +39,22 @@ interface UserItem {
   createdAt: string;
 }
 
+interface Quotation {
+  _id: string;
+  quoteNumber?: string;
+  customerName?: string;
+  items?: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }[];
+  total?: number;
+  status?: string;
+  createdAt?: string;
+}
+
 interface DashboardData {
   stats: {
     label: string;
@@ -48,7 +64,7 @@ interface DashboardData {
   allOrders: OrderItem[];
   recentOrders: OrderItem[];
   allUsers: UserItem[];
-  recentQuotations: any[];
+  recentQuotations: Quotation[];
   products: number;
   categories: number;
   orders: number;
@@ -68,8 +84,7 @@ export default function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'orders' | 'users' | 'quotations'>('orders');
   // New state for quotations
-  const [quotations, setQuotations] = useState<UserOrder[]>([]);
-  // Fetch quotations
+const [quotations, setQuotations] = useState<Quotation[]>([]);  // Fetch quotations
   useEffect(() => {
     if (activeTab === 'quotations') {
       fetch('/api/quotes')
