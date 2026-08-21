@@ -69,7 +69,7 @@ async function handleSubmit(e: React.FormEvent) {
         <div className="flex flex-col items-center">
 
           <Image
-            src="/LOGO.jpeg"
+            src="/logo.jpeg"
             alt="Adline"
             width={90}
             height={90}

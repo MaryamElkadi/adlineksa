@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   title: "Adline KSA | Modern Printing Platform Saudi Arabia",
   description: "Saudi Arabia premier digital printing and advertising platform.",
   icons: {
-    icon: "/LOGO.jpeg",
-    shortcut: "/LOGO.jpeg",
-    apple: "/LOGO.jpeg",
+    icon: "/logo.jpeg",
+    shortcut: "/logo.jpeg",
+    apple: "/logo.jpeg",
   },
 };
 

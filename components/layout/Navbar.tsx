@@ -69,7 +69,7 @@ export const Navbar: React.FC = () => {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-lg border border-slate-100 overflow-hidden group-hover:border-slate-300 transition-colors shadow-sm">
               <Image
-                src="/LOGO.jpeg"
+                src="/logo.jpeg"
                 alt="Adline KSA"
                 width={40}
                 height={40}

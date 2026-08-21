@@ -108,7 +108,7 @@ className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-100 
 <div className="flex flex-col items-center">
 
 <Image
-src="/LOGO.jpeg"
+src="/logo.jpeg"
 alt="logo"
 width={90}
 height={90}
