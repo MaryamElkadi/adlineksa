@@ -16,12 +16,12 @@ const SallaStoreSchema = new Schema(
 
     refreshToken: {
       type: String,
-      required: true,
+      default: "",
     },
 
-    expiresAt: {
-      type: Date,
-      required: true,
+    expires: {
+      type: Number,
+      default: null,
     },
 
     scope: {

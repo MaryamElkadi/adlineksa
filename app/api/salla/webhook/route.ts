@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
-import SallaStore from "@/lib/models/SallaStore";
+import SallaStore from "@/models/SallaStore";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,17 +10,35 @@ export async function POST(request: NextRequest) {
     console.log("Event:", body.event);
     console.log("Merchant:", body.merchant);
 
+    /*
+     * Easy Mode authorization
+     */
     if (body.event === "app.store.authorize") {
-      const merchantId = body.merchant;
-      const data = body.data;
+      const accessToken = body.data?.access_token;
+      const refreshToken = body.data?.refresh_token;
+      const expires = body.data?.expires;
 
-      if (!merchantId || !data?.access_token || !data?.refresh_token) {
-        console.error("Invalid Salla authorization payload");
+      console.log(
+        "Access Token received:",
+        !!accessToken
+      );
 
+      console.log(
+        "Refresh Token received:",
+        !!refreshToken
+      );
+
+      console.log(
+        "Expires:",
+        expires
+      );
+
+      if (!accessToken) {
+        console.error("No access token received");
         return NextResponse.json(
           {
             success: false,
-            message: "Missing Salla authorization data",
+            message: "Access token missing",
           },
           { status: 400 }
         );
@@ -28,17 +46,18 @@ export async function POST(request: NextRequest) {
 
       await connectToDatabase();
 
-      const expiresAt = new Date(data.expires * 1000);
-
       await SallaStore.findOneAndUpdate(
-        { merchantId: String(merchantId) },
         {
-          merchantId: String(merchantId),
-          accessToken: data.access_token,
-          refreshToken: data.refresh_token,
-          expiresAt,
-          scope: data.scope || "",
-          tokenType: data.token_type || "bearer",
+          merchantId: String(body.merchant),
+        },
+        {
+          merchantId: String(body.merchant),
+          accessToken,
+          refreshToken: refreshToken || "",
+          expires: expires || null,
+          scope: body.data?.scope || "",
+          tokenType: body.data?.token_type || "bearer",
+          updatedAt: new Date(),
         },
         {
           upsert: true,
@@ -46,10 +65,24 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      console.log("SALLA STORE AUTHORIZED!");
-      console.log("Merchant:", merchantId);
-      console.log("Access token saved successfully.");
-      console.log("Refresh token saved successfully.");
+      console.log("SALLA STORE SAVED TO DATABASE!");
+    }
+
+    /*
+     * App updated
+     */
+    if (body.event === "app.updated") {
+      console.log("SALLA APP UPDATED");
+    }
+
+    /*
+     * App uninstalled
+     */
+    if (body.event === "app.uninstalled") {
+      console.log(
+        "SALLA APP UNINSTALLED FROM:",
+        body.merchant
+      );
     }
 
     return NextResponse.json(
