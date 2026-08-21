@@ -44,26 +44,37 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await connectToDatabase();
+await connectToDatabase();
 
-      await SallaStore.findOneAndUpdate(
-        {
-          merchantId: String(body.merchant),
-        },
-        {
-          merchantId: String(body.merchant),
-          accessToken,
-          refreshToken: refreshToken || "",
-          expires: expires || null,
-          scope: body.data?.scope || "",
-          tokenType: body.data?.token_type || "bearer",
-          updatedAt: new Date(),
-        },
-        {
-          upsert: true,
-          new: true,
-        }
-      );
+console.log("MongoDB connected successfully");
+console.log(
+  "Saving Salla store:",
+  String(body.merchant)
+);
+
+const savedStore = await SallaStore.findOneAndUpdate(
+  {
+    merchantId: String(body.merchant),
+  },
+  {
+    merchantId: String(body.merchant),
+    accessToken,
+    refreshToken: refreshToken || "",
+    expires: expires || null,
+    scope: body.data?.scope || "",
+    tokenType: body.data?.token_type || "bearer",
+    updatedAt: new Date(),
+  },
+  {
+    upsert: true,
+    new: true,
+  }
+);
+
+console.log(
+  "SALLA STORE SAVED TO DATABASE:",
+  !!savedStore
+);
 
       console.log("SALLA STORE SAVED TO DATABASE!");
     }
