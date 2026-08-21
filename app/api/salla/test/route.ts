@@ -7,7 +7,7 @@ export async function GET() {
      * Replace this with the merchant ID
      * received from your Salla webhook.
      */
-    const merchantId = "1982883112";
+    const merchantId = process.env.SALLA_MERCHANT_ID || "primary";
 
     const data = await sallaRequest(
       merchantId,

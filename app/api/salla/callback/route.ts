@@ -1,34 +1,62 @@
-import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import { exchangeSallaAuthorizationCode } from "@/lib/salla";
+import SallaStore from "@/models/SallaStore";
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+export const runtime = "nodejs";
 
-  const code = searchParams.get("code");
-  const error = searchParams.get("error");
+function stateMatches(expected: string | undefined, received: string | null) {
+  if (!expected || !received) return false;
 
-  if (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error,
-      },
-      { status: 400 }
-    );
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
+}
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  const error = url.searchParams.get("error");
+  const expectedState = request.headers
+    .get("cookie")
+    ?.match(/(?:^|; )salla_oauth_state=([^;]+)/)?.[1];
+
+  const settingsUrl = new URL("/admin/settings", request.url);
+  const response = NextResponse.redirect(settingsUrl);
+  response.cookies.delete("salla_oauth_state");
+
+  if (error || !code || !stateMatches(expectedState, state)) {
+    settingsUrl.searchParams.set("salla", "failed");
+    return NextResponse.redirect(settingsUrl, { headers: response.headers });
   }
 
-  if (!code) {
-    return NextResponse.json(
+  try {
+    const tokens = await exchangeSallaAuthorizationCode(code);
+    await connectToDatabase();
+    await SallaStore.findOneAndUpdate(
+      { merchantId: "primary" },
       {
-        success: false,
-        error: "Authorization code is missing",
+        merchantId: "primary",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || "",
+        expires: Math.floor(Date.now() / 1000) + Math.max(tokens.expires_in || 0, 60),
+        scope: "orders.read_write products.read webhooks.read_write",
+        tokenType: tokens.token_type || "Bearer",
       },
-      { status: 400 }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-  }
 
-  return NextResponse.json({
-    success: true,
-    message: "Salla authorization callback received",
-    codeReceived: true,
-  });
+    settingsUrl.searchParams.set("salla", "connected");
+    return NextResponse.redirect(settingsUrl, { headers: response.headers });
+  } catch (callbackError) {
+    console.error("SALLA CALLBACK ERROR:", callbackError);
+    settingsUrl.searchParams.set("salla", "failed");
+    return NextResponse.redirect(settingsUrl, { headers: response.headers });
+  }
 }
