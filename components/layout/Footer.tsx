@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ProductsQrCode } from './ProductsQrCode';
 
 export const Footer: React.FC = () => {
   return (
@@ -104,6 +105,9 @@ export const Footer: React.FC = () => {
               <p>💬 واتساب: 4567 123 50 966+</p>
               <p>✉️ البريد الإلكتروني: support@adlineksa.com</p>
               <p>🕒 أوقات العمل: الأحد - الخميس (8:00 صباحاً - 6:00 مساءً)</p>
+            </div>
+            <div className="mt-5 max-w-[210px]">
+              <ProductsQrCode />
             </div>
           </div>
         </div>
