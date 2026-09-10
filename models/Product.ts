@@ -28,7 +28,21 @@ const ProductSchema = new Schema({
   active: { type: Boolean, default: true },
   seoTitle: { type: String, default: "" },
   seoDescription: { type: String, default: "" },
-  mostUsed: { type: Boolean, default: false },   // <-- add this
+  mostUsed: { type: Boolean, default: false },
+  sku: { type: String, unique: true, sparse: true },
+  marketplaceData: {
+    amazon: {
+      sku: { type: String },
+      asin: { type: String },
+      exported: { type: Boolean, default: false },
+      lastExportedAt: { type: Date },
+    },
+    noon: {
+      psku: { type: String },
+      exported: { type: Boolean, default: false },
+      lastExportedAt: { type: Date },
+    },
+  },
 
 }, { timestamps: true });
 
