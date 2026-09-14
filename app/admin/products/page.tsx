@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Category, Product, ConfigOption, QuantityTier } from '@/types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
@@ -73,12 +74,15 @@ const initialFormState: ProductFormState = {
 };
 
 export default function AdminProductsPage() {
+  const searchParams = useSearchParams();
+  const marketplace = searchParams?.get('marketplace');
   const [productList, setProductList] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<ProductFormState>(initialFormState);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     try {
@@ -318,6 +322,7 @@ export default function AdminProductsPage() {
           <table className="w-full text-right text-xs font-medium text-slate-700">
             <thead className="bg-gradient-to-r from-slate-50 to-amber-50/30 text-slate-800 uppercase font-black text-[11px] border-b border-slate-200/80">
               <tr>
+                {marketplace && <th className="p-4">اختيار</th>}
                 <th className="p-4">المنتج</th>
                 <th className="p-4">الفئة</th>
                 <th className="p-4">السعر الأساسي</th>
@@ -328,6 +333,22 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-slate-100">
               {productList.map((product) => (
                 <tr key={product.id} className="hover:bg-amber-50/30 transition-colors">
+                  {marketplace && (
+                    <td className="p-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(product.id)}
+                        onChange={() => {
+                          setSelectedIds((prev) =>
+                            prev.includes(product.id)
+                              ? prev.filter((id) => id !== product.id)
+                              : [...prev, product.id]
+                          );
+                        }}
+                        className="h-4 w-4 text-amber-600 border-gray-300 rounded"
+                      />
+                    </td>
+                  )}
                   <td className="p-4 flex items-center gap-3">
                     <img
                       src={product.image}
@@ -372,6 +393,81 @@ export default function AdminProductsPage() {
           </table>
         </div>
       </div>
+
+      {marketplace && (
+        <div className="mt-4 flex items-center space-x-2 rtl:space-x-reverse">
+          <Button
+            variant="yellow"
+            onClick={() => setSelectedIds(productList.map((p) => p.id))}
+            className="text-slate-900 font-bold"
+          >
+            تحديد الكل
+          </Button>
+          <Button
+            variant="yellow"
+            onClick={() => setSelectedIds([])}
+            className="text-slate-900 font-bold"
+          >
+            إلغاء الاختيار
+          </Button>
+          <span className="text-sm font-medium text-amber-800">
+            {selectedIds.length} منتج(ات) مختارة
+          </span>
+          <Button
+            variant="yellow"
+            onClick={async () => {
+              if (!marketplace) return;
+              const response = await fetch(`/api/admin/marketplaces/${marketplace}/export`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productIds: selectedIds }),
+              });
+              if (!response.ok) {
+                const text = await response.text();
+                Swal.fire({ icon: 'error', title: 'فشل التصدير', text: text || 'Export failed' });
+                return;
+              }
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${marketplace}-selected-products.xlsx`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+            }}
+            className="text-slate-900 font-bold"
+            disabled={selectedIds.length === 0}
+          >
+            تصدير المختارة إلى {marketplace === 'amazon' ? 'Amazon' : 'Noon'}
+          </Button>
+          <Button
+            variant="yellow"
+            onClick={async () => {
+              const response = await fetch(`/api/admin/marketplaces/noon/export`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productIds: selectedIds }),
+              });
+              if (!response.ok) {
+                const text = await response.text();
+                Swal.fire({ icon: 'error', title: 'فشل التصدير', text: text || 'Export failed' });
+                return;
+              }
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `noon-selected-products.xlsx`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+            }}
+            className="text-slate-900 font-bold ml-2"
+            disabled={selectedIds.length === 0}
+          >
+            تصدير المختارة إلى Noon
+          </Button>
+        </div>
+      )}
 
       {/* Smart Product Configurator Modal */}
       <Modal

@@ -73,6 +73,27 @@ export async function PATCH(
   }
 }
 
+// New PUT handler – works like PATCH but supports full replacement semantics
+export async function PUT(request: Request, context: RouteContext<"/api/products/[id]">) {
+  try {
+    const { id } = await context.params;
+    await connectToDatabase();
+    const body = await request.json();
+    const product = await Product.findByIdAndUpdate(id, body, {
+      new: true,
+      overwrite: true, // replace the whole document
+      runValidators: true,
+    });
+    if (!product) {
+      return NextResponse.json({ message: "Product not found." }, { status: 404 });
+    }
+    return NextResponse.json(serializeDocument(product));
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ message: "Could not replace product." }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _request: Request,
   context: RouteContext<"/api/products/[id]">
