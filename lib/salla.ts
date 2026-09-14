@@ -15,11 +15,9 @@ export type SallaTokenResponse = {
 
 function required(name: string) {
   const value = process.env[name];
-
   if (!value) {
     throw new Error(`Missing required Salla configuration: ${name}`);
   }
-
   return value;
 }
 
@@ -31,7 +29,6 @@ export function getSallaAuthorizationUrl(state: string) {
     scope: "orders.read_write products.read webhooks.read_write offline_access",
     state,
   });
-
   return `${SALLA_AUTH_URL}?${params.toString()}`;
 }
 
@@ -59,24 +56,21 @@ export async function exchangeSallaAuthorizationCode(code: string) {
   if (!response.ok || !data.access_token) {
     throw new Error(data.message || data.error || "Salla did not return an access token.");
   }
-
   return data;
 }
 
 export async function getSallaStore(merchantId = "primary") {
   await connectToDatabase();
   const store = await SallaStore.findOne({ merchantId: String(merchantId) });
-
   if (!store) {
     throw new Error("Salla has not been connected yet.");
   }
-
   return store;
 }
 
+/** Refresh the access token using a single‑use refresh token. */
 async function refreshSallaToken(merchantId = "primary") {
   const store = await getSallaStore(merchantId);
-
   if (!store.refreshToken) {
     throw new Error("The Salla connection has expired. Connect Salla again.");
   }
@@ -102,23 +96,28 @@ async function refreshSallaToken(merchantId = "primary") {
     throw new Error(data.message || data.error || "Could not refresh the Salla connection.");
   }
 
+  // Update store atomically.
   store.accessToken = data.access_token;
-  store.refreshToken = data.refresh_token || store.refreshToken;
+  store.refreshToken = data.refresh_token || store.refreshToken; // refresh token is single‑use
   store.expires = Math.floor(Date.now() / 1000) + (data.expires_in || 14 * 24 * 60 * 60);
   await store.save();
-
   return store.accessToken as string;
 }
 
+/** Return a valid token, refreshing if we are within 1 minute of expiry. */
 export async function getSallaAccessToken(merchantId = "primary") {
   const store = await getSallaStore(merchantId);
   const expiresAt = Number(store.expires || 0) * 1000;
-
   if (expiresAt && Date.now() >= expiresAt - 60_000) {
     return refreshSallaToken(merchantId);
   }
-
   return store.accessToken as string;
+}
+
+function isAuthError(response: Response, data: any): boolean {
+  if (response.status === 401) return true;
+  const msg = (data?.error?.message ?? data?.message ?? "").toString().toLowerCase();
+  return msg.includes("invalid") && msg.includes("token");
 }
 
 export async function sallaRequest<T>(
@@ -126,8 +125,9 @@ export async function sallaRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const accessToken = await getSallaAccessToken(merchantId);
-  const response = await fetch(`${SALLA_API_URL}${endpoint}`, {
+  // First attempt.
+  let accessToken = await getSallaAccessToken(merchantId);
+  let response = await fetch(`${SALLA_API_URL}${endpoint}`, {
     ...options,
     headers: {
       Accept: "application/json",
@@ -137,23 +137,40 @@ export async function sallaRequest<T>(
     },
     cache: "no-store",
   });
-  const data = await response.json().catch(() => null);
+  let data = await response.json().catch(() => null);
 
-  if (!response.ok) {
-    throw new Error(data?.error?.message || data?.message || "Salla API request failed.");
+  if (response.ok) {
+    return data as T;
   }
 
-  return data as T;
+  // If auth error, refresh once and retry.
+  if (isAuthError(response, data)) {
+    accessToken = await refreshSallaToken(merchantId);
+    response = await fetch(`${SALLA_API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        ...(options.headers || {}),
+      },
+      cache: "no-store",
+    });
+    data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.error?.message || data?.message || "Salla API request failed after token refresh.");
+    }
+    return data as T;
+  }
+
+  throw new Error(data?.error?.message || data?.message || "Salla API request failed.");
 }
 
 export function isValidSallaWebhookSignature(body: string, signature: string | null) {
   const secret = process.env.SALLA_WEBHOOK_SECRET;
-
   if (!secret || !signature) return false;
-
   const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
   const received = Buffer.from(signature, "utf8");
   const expectedBuffer = Buffer.from(expected, "utf8");
-
   return received.length === expectedBuffer.length && crypto.timingSafeEqual(received, expectedBuffer);
 }
