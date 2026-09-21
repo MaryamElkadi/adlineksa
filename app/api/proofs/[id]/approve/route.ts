@@ -1,55 +1,61 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Artwork from "@/models/Artwork";
-import { getCurrentUserId } from "@/lib/currentUser";
+import { getCurrentUser } from "@/lib/currentUser";
+import { createNotification } from "@/lib/notifications";
 
-function serializeProof(proof: any) {
-  const value = proof.toObject();
-
-  return {
-    ...value,
-    _id: value._id.toString(),
-    id: value._id.toString(),
-    orderId: value.orderId ? value.orderId.toString() : null,
-  };
-}
+export const dynamic = "force-dynamic";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await getCurrentUserId();
+    const currentUser = await getCurrentUser();
 
-    if (!userId) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+    if (!currentUser) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-
     await connectToDatabase();
 
-    const proof = await Artwork.findOneAndUpdate(
-      { _id: id, userId },
-      { proofStatus: "approved" },
-      { new: true }
-    );
+    const proof = await Artwork.findById(id);
 
     if (!proof) {
-      return NextResponse.json(
-        { message: "Proof not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "Proof not found" }, { status: 404 });
     }
 
-    return NextResponse.json(serializeProof(proof));
+    if (
+      currentUser.role !== "admin" &&
+      proof.userId?.toString() !== currentUser._id?.toString()
+    ) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    proof.proofStatus = "approved";
+    proof.revisionNote = "";
+    await proof.save();
+
+    await createNotification({
+      userId: proof.userId.toString(),
+      title: "تم اعتماد بروفة التصميم ✓",
+      message: `شكراً لك! تم اعتماد بروفة التصميم (${proof.name}) وسيتم نقل الطلب لمرحلة الطباعة.`,
+      link: "/dashboard",
+      type: "proof",
+    });
+
+    const result = proof.toObject ? proof.toObject() : proof;
+
+    return NextResponse.json({
+      ...result,
+      _id: result._id.toString(),
+      id: result._id.toString(),
+    });
   } catch (error) {
     console.error("APPROVE PROOF ERROR:", error);
     return NextResponse.json(
-      { message: "Could not approve proof" },
+      { message: "Could not approve design proof" },
       { status: 500 }
     );
   }

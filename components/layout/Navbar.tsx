@@ -47,12 +47,20 @@ export const Navbar: React.FC = () => {
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const { api } = await import('@/services/api');
+      await api.logout().catch(() => {});
+    } catch (e) {
+      console.error('Logout request error:', e);
+    }
     localStorage.removeItem("user");
+    localStorage.removeItem("adline_cart");
     setUser(null);
 
-    // Dispatch event so all components update instantly
+    // Dispatch events so all components and useCart update instantly without browser refresh
     window.dispatchEvent(new Event('auth-change'));
+    window.dispatchEvent(new Event('cart-change'));
 
     router.push('/');
   };

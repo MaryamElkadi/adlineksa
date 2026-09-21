@@ -1,5 +1,17 @@
 import { Schema, model, models } from "mongoose";
 
+const VersionHistorySchema = new Schema(
+  {
+    version: { type: Number, required: true },
+    fileUrl: { type: String, required: true },
+    fileName: { type: String, default: "" },
+    fileSize: { type: Number, default: 0 },
+    note: { type: String, default: "" },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const ArtworkSchema = new Schema(
   {
     // Owner of this artwork
@@ -41,6 +53,16 @@ const ArtworkSchema = new Schema(
       default: 0,
     },
 
+    version: {
+      type: Number,
+      default: 1,
+    },
+
+    versionHistory: {
+      type: [VersionHistorySchema],
+      default: [],
+    },
+
     // library = normal saved artwork
     // proof = artwork waiting for customer approval
     type: {
@@ -64,6 +86,11 @@ const ArtworkSchema = new Schema(
       default: "",
     },
 
+    adminComment: {
+      type: String,
+      default: "",
+    },
+
     orderId: {
       type: Schema.Types.ObjectId,
       ref: "Order",
@@ -75,5 +102,6 @@ const ArtworkSchema = new Schema(
   }
 );
 
-export default models.Artwork ||
-  model("Artwork", ArtworkSchema);
+ArtworkSchema.index({ userId: 1, type: 1, createdAt: -1 });
+
+export default models.Artwork || model("Artwork", ArtworkSchema);

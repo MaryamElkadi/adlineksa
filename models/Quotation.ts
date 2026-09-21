@@ -10,9 +10,16 @@ const QuotationSchema = new Schema(
       index: true,
     },
 
+    quoteNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+
     title: {
       type: String,
-      default: "",
+      default: "طلب تسعير خاص",
     },
 
     specs: {
@@ -32,12 +39,12 @@ const QuotationSchema = new Schema(
 
     phone: {
       type: String,
-      default: "غير مدخل",
+      default: "",
     },
 
     email: {
       type: String,
-      default: "user@example.com",
+      default: "",
     },
 
     city: {
@@ -47,12 +54,13 @@ const QuotationSchema = new Schema(
 
     category: {
       type: String,
-      default: "",
+      default: "مطابوعات عامة",
     },
 
     quantity: {
       type: Number,
       required: true,
+      min: 1,
     },
 
     width: {
@@ -93,6 +101,7 @@ const QuotationSchema = new Schema(
         "Quoted",
         "Accepted",
         "Rejected",
+        "Cancelled",
       ],
       default: "Pending",
     },
@@ -100,6 +109,26 @@ const QuotationSchema = new Schema(
     quotationPrice: {
       type: Number,
       default: 0,
+    },
+
+    vatAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    totalPrice: {
+      type: Number,
+      default: 0,
+    },
+
+    validUntil: {
+      type: String,
+      default: "",
+    },
+
+    customerNotes: {
+      type: String,
+      default: "",
     },
 
     adminNotes: {
@@ -112,5 +141,7 @@ const QuotationSchema = new Schema(
   }
 );
 
-export default models.Quotation ||
-  model("Quotation", QuotationSchema);
+QuotationSchema.index({ userId: 1, createdAt: -1 });
+QuotationSchema.index({ status: 1 });
+
+export default models.Quotation || model("Quotation", QuotationSchema);

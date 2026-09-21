@@ -7,17 +7,46 @@ export function useCart() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
+  const loadCartFromStorage = () => {
     try {
       const saved = localStorage.getItem('adline_cart');
       if (saved) {
         setItems(JSON.parse(saved));
+      } else {
+        setItems([]);
       }
     } catch (e) {
       console.error('Failed to load cart from storage', e);
+      setItems([]);
     } finally {
       setIsLoaded(true);
     }
+  };
+
+  useEffect(() => {
+    loadCartFromStorage();
+
+    const handleCartChange = () => loadCartFromStorage();
+    const handleAuthChange = () => {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        // User logged out: clear cart state immediately
+        localStorage.removeItem('adline_cart');
+        setItems([]);
+      } else {
+        loadCartFromStorage();
+      }
+    };
+
+    window.addEventListener('cart-change', handleCartChange);
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleCartChange);
+
+    return () => {
+      window.removeEventListener('cart-change', handleCartChange);
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleCartChange);
+    };
   }, []);
 
   const saveCart = (newItems: CartItem[]) => {
@@ -27,6 +56,7 @@ export function useCart() {
     } catch (e) {
       console.error('Failed to save cart', e);
     }
+    window.dispatchEvent(new Event('cart-change'));
   };
 
   const addItem = (newItem: CartItem) => {

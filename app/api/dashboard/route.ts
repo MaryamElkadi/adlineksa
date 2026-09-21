@@ -6,19 +6,32 @@ import Quotation from "@/models/Quotation";
 import Product from "@/models/Product";
 import Category from "@/models/Category";
 import User from "@/models/User";
+import Artwork from "@/models/Artwork";
+import Ticket from "@/models/Ticket";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     await connectToDatabase();
 
-    const [orders, quotations, productsCount, categoriesCount, users] =
-      await Promise.all([
-        Order.find({}).sort({ createdAt: -1 }).lean(),
-        Quotation.find({}).sort({ createdAt: -1 }).lean(),
-        Product.countDocuments({}),
-        Category.countDocuments({}),
-        User.find({}).sort({ createdAt: -1 }).lean(),
-      ]);
+    const [
+      orders,
+      quotations,
+      productsCount,
+      categoriesCount,
+      users,
+      pendingProofs,
+      openTickets,
+    ] = await Promise.all([
+      Order.find({}).sort({ createdAt: -1 }).lean(),
+      Quotation.find({}).sort({ createdAt: -1 }).lean(),
+      Product.countDocuments({}),
+      Category.countDocuments({}),
+      User.find({}).sort({ createdAt: -1 }).lean(),
+      Artwork.countDocuments({ type: "proof", proofStatus: "pending" }),
+      Ticket.countDocuments({ status: { $in: ["Open", "In Progress"] } }),
+    ]);
 
     const totalRevenue = orders.reduce(
       (sum: number, order: any) => sum + (order.total || 0),
@@ -37,22 +50,22 @@ export async function GET() {
       {
         label: "إجمالي المبيعات",
         value: `${totalRevenue.toLocaleString("ar-SA")} ر.س`,
-        change: "+12.5%",
+        change: "مباشر من MongoDB",
       },
       {
         label: "إجمالي الطلبات",
         value: orders.length.toString(),
-        change: "+8.2%",
+        change: `${pendingOrders} قيد الانتظار`,
       },
       {
-        label: "طلبات التسعير",
+        label: "طلبات التسعير (RFQ)",
         value: quotations.length.toString(),
-        change: "+4.1%",
+        change: `${pendingQuotations} بانتظار العرض`,
       },
       {
-        label: "العملاء المسجلون",
-        value: users.length.toString(),
-        change: "+15.0%",
+        label: "تذاكر الدعم والبروفات",
+        value: (openTickets + pendingProofs).toString(),
+        change: `${openTickets} تذاكر / ${pendingProofs} بروفات`,
       },
     ];
 
@@ -119,17 +132,16 @@ export async function GET() {
       users: users.length,
       pendingOrders,
       pendingQuotations,
+      pendingProofs,
+      openTickets,
       revenue: totalRevenue,
     });
   } catch (error) {
     console.error("ADMIN DASHBOARD ERROR:", error);
 
     return NextResponse.json(
-      {
-        message: "Failed to load dashboard data",
-      },
+      { message: "Failed to load dashboard data" },
       { status: 500 }
     );
   }
 }
-

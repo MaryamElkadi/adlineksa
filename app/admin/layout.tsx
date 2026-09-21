@@ -15,16 +15,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const [role, setRole] = useState<'Super Admin' | 'Manager' | 'Production' | 'Support'>('Super Admin');
   const navItems = [
-    { href: '/admin/categories', label: '📂 الفئات' },
     { href: '/admin', label: '📊 نظرة عامة علي اللوحة' },
-    { href: '/admin/products', label: '📦 كتالوج المنتجات (إدارة المنتجات)' },
-    { href: '/admin/orders', label: '📑 إدارة الطلبات' },
-    { href: '/admin/marketplaces', label: '🌐 الأسواق والمنصات' },
+    { href: '/admin/orders', label: '📦 إدارة جميع الطلبات' },
+    { href: '/admin/quotations', label: '🏷️ طلبات التسعير (RFQ)' },
+    { href: '/admin/proofs', label: '🔍 مراجعة البروفات' },
+    { href: '/admin/artworks', label: '📁 مكتبة التصاميم' },
+    { href: '/admin/tickets', label: '💬 تذاكر الدعم الفني' },
+    { href: '/admin/products', label: '📦 كتالوج المنتجات' },
+    { href: '/admin/categories', label: '📂 الفئات' },
     { href: '/admin/customers', label: '👥 ملفات العملاء' },
+    { href: '/admin/marketplaces', label: '🌐 الأسواق والمنصات' },
     { href: '/admin/cms', label: '🌐 إدارة المحتوى والبنرات' },
     { href: '/admin/marketing', label: '🏷️ التسويق وكوبونات الخصم' },
     { href: '/admin/settings', label: '⚙️ إعدادات المنصة' },
-    { href: '/admin/quotations', label: '⚙️ طلبات التسعير ' },
   ];
 
   return (

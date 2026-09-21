@@ -67,23 +67,27 @@ interface QuoteRequest {
   priceOffer?: number;
 }
 
+interface TicketMessage {
+  _id?: string;
+  sender: "customer" | "admin";
+  senderName: string;
+  text: string;
+  attachments?: string[];
+  createdAt?: string;
+}
+
 interface Ticket {
   _id: string;
   ticketNumber?: string;
   subject: string;
   category: string;
   message: string;
-  status:
-    | "Open"
-    | "In Progress"
-    | "Resolved"
-    | "Closed"
-    | "مفتوحة"
-    | "قيد المراجعة"
-    | "مغلقة";
+  status: string;
   priority?: "Low" | "Medium" | "High";
   adminReply?: string;
+  messages?: TicketMessage[];
   date: string;
+  updatedAt?: string;
 }
 
 interface Artwork {
@@ -120,11 +124,16 @@ export default function DashboardPage() {
     firstName: string;
     lastName: string;
     email: string;
+    phone?: string;
     role?: string;
   } | null>(null);
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Order | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+
   const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
   const [isNewQuoteOpen, setIsNewQuoteOpen] = useState<boolean>(false);
   const [isNewTicketOpen, setIsNewTicketOpen] = useState<boolean>(false);
@@ -138,11 +147,24 @@ export default function DashboardPage() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab && ['orders', 'quotes', 'proofs', 'artworks', 'tickets'].includes(tab)) {
+        setActiveTab(tab as TabType);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -153,6 +175,7 @@ export default function DashboardPage() {
         setEditFirstName(parsed.firstName || '');
         setEditLastName(parsed.lastName || '');
         setEditEmail(parsed.email || '');
+        setEditPhone(parsed.phone || '');
       } catch (e) {
         console.error('Failed to parse cached user details', e);
       }
@@ -243,8 +266,10 @@ export default function DashboardPage() {
   // Updated Dynamic Profile Handler
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setProfileError(null);
+    setProfileLoading(true);
     try {
-      const response = await fetch("/api/users/me", {
+      const response = await fetch("/api/profile", {
         method: "PATCH",
         credentials: "include",
         headers: {
@@ -254,21 +279,59 @@ export default function DashboardPage() {
           firstName: editFirstName,
           lastName: editLastName,
           email: editEmail,
+          phone: editPhone,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        throw new Error(data.message || "فشل في تحديث الملف الشخصي");
       }
 
-      const updatedUser = await response.json();
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
+      window.dispatchEvent(new Event('auth-change'));
       setIsEditProfileOpen(false);
       showToast('تم حفظ بيانات الملف الشخصي بنجاح!');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      showToast('حدث خطأ أثناء تحديث الملف الشخصي');
+      setProfileError(error.message || 'حدث خطأ أثناء تحديث الملف الشخصي');
+      showToast(error.message || 'حدث خطأ أثناء تحديث الملف الشخصي');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleSendTicketReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket || !replyText.trim()) return;
+
+    try {
+      setSendingReply(true);
+      const response = await fetch(`/api/tickets/${selectedTicket._id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: replyText.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("فشل إرسال الرد");
+      }
+
+      const updatedTicket = await response.json();
+      setSelectedTicket(updatedTicket);
+      setTickets((prev) =>
+        prev.map((t) => (t._id === updatedTicket._id ? updatedTicket : t))
+      );
+      setReplyText('');
+      showToast("تم إرسال الرد بنجاح!");
+    } catch (error: any) {
+      console.error("Reply error:", error);
+      showToast(error.message || "حدث خطأ أثناء إرسال الرد");
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -769,7 +832,10 @@ export default function DashboardPage() {
       {activeTab === 'tickets' && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-black text-slate-900">تذاكر الدعم الفني 💬</h2>
+            <div>
+              <h2 className="text-lg font-black text-slate-900">تذاكر الدعم الفني 💬</h2>
+              <p className="text-xs text-slate-500 font-medium">تواصل مباشر مع فريق خدمة العملاء والدعم الفني</p>
+            </div>
             <Button
               size="sm"
               onClick={() => setIsNewTicketOpen(true)}
@@ -780,17 +846,55 @@ export default function DashboardPage() {
           </div>
 
           {tickets.length === 0 ? (
-            <p className="text-xs text-slate-400 font-semibold">لا توجد تذاكر دعم نشطة حالياً.</p>
+            <div className="text-center py-10 text-slate-400 font-medium border-2 border-dashed border-slate-100 rounded-2xl">
+              💬 لا توجد تذاكر دعم نشطة حالياً. يمكنك فتح تذكرة جديدة في أي وقت.
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {tickets.map((t) => (
-                <div key={t._id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex justify-between items-center">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">{t.subject}</h4>
-                    <p className="text-xs text-slate-500">{t.category} • {t.date}</p>
-                    <p className="text-xs text-slate-600 mt-1">{t.message}</p>
+                <div key={t._id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition-all space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200/60 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          {t.ticketNumber || `TCK-${t._id.slice(-4)}`}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500">• التصنيف: {t.category}</span>
+                      </div>
+                      <h4 className="text-sm font-black text-slate-900 mt-1">{t.subject}</h4>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        className={
+                          t.status === 'Open' || t.status === 'مفتوحة'
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : t.status === 'In Progress' || t.status === 'قيد المعالجة' || t.status === 'قيد المراجعة'
+                            ? 'bg-blue-100 text-blue-900 border-blue-300'
+                            : t.status === 'Resolved' || t.status === 'تم الحل'
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                            : 'bg-slate-200 text-slate-800'
+                        }
+                      >
+                        {t.status === 'Open' ? 'مفتوحة' : t.status === 'In Progress' ? 'قيد المعالجة' : t.status === 'Resolved' ? 'تم الحل' : t.status === 'Closed' ? 'مغلقة' : t.status}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setSelectedTicket(t)}
+                        className="font-bold text-xs border-amber-300 bg-white hover:bg-amber-50 text-amber-900 cursor-pointer"
+                      >
+                        فتح المحادثة والردود 💬
+                      </Button>
+                    </div>
                   </div>
-                  <Badge className="bg-amber-100 text-amber-900">{t.status}</Badge>
+
+                  <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
+                    <span>تاريخ الإنشاء: <strong className="text-slate-700">{t.date}</strong></span>
+                    {t.updatedAt && (
+                      <span>آخر تحديث: <strong className="text-slate-700">{new Date(t.updatedAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</strong></span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -846,6 +950,12 @@ export default function DashboardPage() {
               <button onClick={() => setIsEditProfileOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
+            {profileError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold">
+                ⚠️ {profileError}
+              </div>
+            )}
+
             <form onSubmit={handleSaveProfile} className="space-y-4 text-xs font-bold text-slate-700">
               <div>
                 <label className="block mb-1">الاسم الأول</label>
@@ -859,7 +969,7 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block mb-1">الاسم الأخير</label>
+                <label className="block mb-1">اسم العائلة</label>
                 <input
                   type="text"
                   required
@@ -880,12 +990,122 @@ export default function DashboardPage() {
                 />
               </div>
 
+              <div>
+                <label className="block mb-1">رقم الهاتف</label>
+                <input
+                  type="tel"
+                  placeholder="05XXXXXXXX"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
               <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 rounded-2xl cursor-pointer">
-                  حفظ التغيرات
+                <Button
+                  type="submit"
+                  disabled={profileLoading}
+                  className="flex-1 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 rounded-2xl cursor-pointer disabled:opacity-50"
+                >
+                  {profileLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
                 </Button>
                 <Button type="button" onClick={() => setIsEditProfileOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl cursor-pointer">
                   إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Ticket Conversation & Details */}
+      {selectedTicket && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-2xl shadow-2xl space-y-6 relative border border-slate-100 max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
+                    {selectedTicket.ticketNumber || `TCK-${selectedTicket._id.slice(-4)}`}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">• التصنيف: {selectedTicket.category}</span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mt-1">{selectedTicket.subject}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedTicket(null)}
+                className="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-600 font-bold transition-all flex items-center justify-center cursor-pointer text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Conversation Thread */}
+            <div className="flex-1 overflow-y-auto space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 max-h-[400px]">
+              {/* Initial ticket message */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-800">صاحب التذكرة</span>
+                  <span className="text-slate-400 font-medium">{selectedTicket.date}</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium">{selectedTicket.message}</p>
+              </div>
+
+              {/* Thread messages */}
+              {selectedTicket.messages && selectedTicket.messages.map((m, idx) => {
+                const isAdmin = m.sender === 'admin';
+                return (
+                  <div
+                    key={m._id || idx}
+                    className={`p-4 rounded-2xl border shadow-xs space-y-1 ${
+                      isAdmin
+                        ? 'bg-amber-50/80 border-amber-200 text-right mr-4'
+                        : 'bg-white border-slate-200 text-right ml-4'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center text-xs">
+                      <span className={`font-bold ${isAdmin ? 'text-amber-900' : 'text-slate-900'}`}>
+                        {m.senderName || (isAdmin ? 'فريق الدعم الفني 🛡️' : 'أنت')}
+                      </span>
+                      {m.createdAt && (
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          {new Date(m.createdAt).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{m.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Reply Form */}
+            <form onSubmit={handleSendTicketReply} className="space-y-3 pt-2">
+              <label className="block text-xs font-bold text-slate-700">إضافة رد جديد على التذكرة</label>
+              <textarea
+                required
+                rows={3}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="اكتب ردك هنا لتبليغ فريق الدعم..."
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-amber-400 text-xs font-medium resize-none"
+              />
+              <div className="flex justify-between items-center gap-3">
+                <Button
+                  type="submit"
+                  disabled={sendingReply || !replyText.trim()}
+                  className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-6 py-2.5 rounded-xl cursor-pointer disabled:opacity-50 text-xs"
+                >
+                  {sendingReply ? 'جاري إرسال الرد...' : 'إرسال الرد 💬'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setSelectedTicket(null)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-xl cursor-pointer text-xs"
+                >
+                  إغلاق
                 </Button>
               </div>
             </form>

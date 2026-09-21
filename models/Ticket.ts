@@ -1,5 +1,41 @@
 import { Schema, model, models } from "mongoose";
 
+const MessageSchema = new Schema(
+  {
+    sender: {
+      type: String,
+      enum: ["customer", "admin"],
+      required: true,
+    },
+
+    senderName: {
+      type: String,
+      default: "مستخدم",
+    },
+
+    text: {
+      type: String,
+      required: true,
+    },
+
+    attachments: {
+      type: [String],
+      default: [],
+    },
+
+    isInternalNote: {
+      type: Boolean,
+      default: false,
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: true }
+);
+
 const TicketSchema = new Schema(
   {
     // Owner
@@ -66,6 +102,11 @@ const TicketSchema = new Schema(
       default: "Medium",
     },
 
+    messages: {
+      type: [MessageSchema],
+      default: [],
+    },
+
     adminReply: {
       type: String,
       default: "",
@@ -76,5 +117,7 @@ const TicketSchema = new Schema(
   }
 );
 
-export default models.Ticket ||
-  model("Ticket", TicketSchema);
+TicketSchema.index({ userId: 1, createdAt: -1 });
+TicketSchema.index({ status: 1 });
+
+export default models.Ticket || model("Ticket", TicketSchema);
