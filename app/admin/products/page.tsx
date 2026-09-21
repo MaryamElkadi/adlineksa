@@ -81,6 +81,8 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [skuError, setSkuError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ProductFormState>(initialFormState);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -197,7 +199,10 @@ export default function AdminProductsPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (isSubmitting) return; // Prevent double-click
     setError('');
+    setSkuError('');
+    setIsSubmitting(true);
 
     const autoSlug =
       formData.slug ||
@@ -214,9 +219,13 @@ export default function AdminProductsPage() {
     // Fallback to default placeholder image if left empty
     const finalImage = formData.image?.trim() || defaultImage;
 
+    // SKU: send trimmed value or empty string (backend will auto-generate)
+    const skuValue = formData.sku?.trim() || '';
+
     const payload = {
       ...formData,
       slug: autoSlug,
+      sku: skuValue,
       image: finalImage,
       gallery: formData.gallery?.length ? formData.gallery : [finalImage],
       basePrice: Number(formData.basePrice) || 0,
@@ -246,12 +255,20 @@ export default function AdminProductsPage() {
 
       if (!response.ok) {
         const resData = await response.json();
+
+        // Handle SKU-specific duplicate error
+        if (response.status === 409 && resData.error === 'SKU_ALREADY_EXISTS') {
+          setSkuError('رقم SKU مستخدم بالفعل — هذا الرقم التعريفي مرتبط بمنتج آخر. يرجى استخدام SKU مختلف.');
+          setIsSubmitting(false);
+          return;
+        }
+
         throw new Error(resData.message || 'فشل حفظ المنتج.');
       }
 
       await Swal.fire({
         icon: 'success',
-        title: editingId ? 'تم تعديل المنتج بنجاح! ✨' : 'تم إضافة المنتج بالحاسبة الذكية! 🎉',
+        title: editingId ? 'تم تعديل المنتج بنجاح! ✨' : 'تم إنشاء المنتج بنجاح! 🎉',
         timer: 2000,
         showConfirmButton: false,
       });
@@ -260,6 +277,8 @@ export default function AdminProductsPage() {
       void load();
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء الحفظ.');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -593,6 +612,43 @@ export default function AdminProductsPage() {
                 </div>
               )}
             </div>
+
+            {/* SKU Field */}
+            <div className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2">
+              <label className="block text-[11px] font-black text-slate-700">
+                🏷️ رقم SKU (اختياري — يُولّد تلقائياً إن تُرك فارغاً)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={formData.sku || ''}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value });
+                    setSkuError('');
+                  }}
+                  placeholder="ADL-26A7F3B (يُولّد تلقائياً)"
+                  className={skuError ? 'border-rose-400 bg-rose-50' : ''}
+                />
+                {formData.sku && formData.sku.trim() !== '' && (
+                  <button
+                    type="button"
+                    onClick={() => { setFormData({ ...formData, sku: '' }); setSkuError(''); }}
+                    className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-2.5 py-1.5 rounded-lg whitespace-nowrap"
+                  >
+                    توليد SKU جديد
+                  </button>
+                )}
+              </div>
+              {skuError && (
+                <p className="text-[11px] font-bold text-rose-600 bg-rose-50 px-3 py-2 rounded-xl border border-rose-200">
+                  ⚠ {skuError}
+                </p>
+              )}
+              {!skuError && !formData.sku?.trim() && (
+                <p className="text-[10px] text-slate-500">
+                  سيتم إنشاء رقم SKU فريد تلقائياً عند حفظ المنتج.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Section 2: Quantity Tiers Pricing */}
@@ -860,9 +916,12 @@ export default function AdminProductsPage() {
             <Button
               type="submit"
               variant="yellow"
-              className="text-slate-900 font-black px-6 py-2.5 text-xs rounded-2xl bg-amber-400 hover:bg-amber-300"
+              disabled={isSubmitting}
+              className={`text-slate-900 font-black px-6 py-2.5 text-xs rounded-2xl transition-all ${isSubmitting ? 'bg-amber-200 cursor-not-allowed opacity-70' : 'bg-amber-400 hover:bg-amber-300'}`}
             >
-              {editingId ? 'حفظ التعديلات ✨' : 'حفظ المنتج ✨'}
+              {isSubmitting
+                ? (editingId ? 'جاري حفظ التعديلات...' : 'جاري إنشاء المنتج...')
+                : (editingId ? 'حفظ التعديلات ✨' : 'حفظ المنتج ✨')}
             </Button>
           </div>
         </form>

@@ -2,7 +2,8 @@ import React from 'react';
 import { Hero } from '@/components/home/Hero';
 import { Categories } from '@/components/home/Categories';
 import { FeaturedProducts, FeaturedProducts as FeaturedProductsComponent } from '@/components/home/FeaturedProducts';
-import { Services } from '@/components/home/Services';
+import { HomepageServices } from '@/components/home/HomepageServices';
+import { HomepageExhibitions } from '@/components/home/HomepageExhibitions';
 import { Testimonials } from '@/components/home/Testimonials';
 import { FAQ } from '@/components/home/FAQ';
 import { CTA } from '@/components/home/CTA';
@@ -23,16 +24,12 @@ export default function HomePage() {
 />
 
 <FeaturedProducts
-    title="🏆 الأكثر استخداماً"
-    filter="mostUsed"
-/>
-
-<FeaturedProducts
     title="🆕 أحدث المنتجات"
     filter="newArrival"
 />
   <Categories />
-      {/* <Services /> */}
+      <HomepageServices />
+      <HomepageExhibitions />
       <Testimonials />
       {/* <FAQ /> */}
       {/* <CTA /> */}

@@ -1,4 +1,4 @@
-import { CartItem, Category, Product, UserOrder } from "@/types";
+import { CartItem, Category, Exhibition, Product, Service, UserOrder } from "@/types";
 
 interface LoginResponse {
   user: {
@@ -53,6 +53,14 @@ export const api = {
 
   getProduct: (id: string) =>
     request<Product>(`/api/products/${id}`),
+
+  getServices: (category?: string) => request<Service[]>(`/api/services${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+  getService: (id: string) => request<Service>(`/api/services/${id}`),
+  getHomepageServices: () => request<Service[]>("/api/services/homepage"),
+  getFeaturedServices: (limit = 8) => request<Service[]>(`/api/services/featured?limit=${limit}`),
+  getExhibitions: (category?: string) => request<Exhibition[]>(`/api/exhibitions${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+  getExhibition: (id: string) => request<Exhibition>(`/api/exhibitions/${id}`),
+  getHomepageExhibitions: () => request<Exhibition[]>("/api/exhibitions/homepage"),
 
   // Orders
   createOrder: (orderData: {

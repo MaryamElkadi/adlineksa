@@ -118,6 +118,37 @@ export interface Product {
   updatedAt?: string;
 }
 
+export interface Service {
+  id: string;
+  title: string;
+  titleAr: string;
+  slug: string;
+  description: string;
+  descriptionAr: string;
+  shortDescription?: string;
+  shortDescriptionAr?: string;
+  image?: string;
+  icon?: string;
+  category: string;
+  price?: number;
+  priceLabel?: string;
+  relatedProductIds?: string[];
+  featured?: boolean;
+  showInHero?: boolean;
+  showOnHomepage?: boolean;
+  active?: boolean;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Exhibition {
+  id: string; title: string; titleAr: string; slug: string; description: string; descriptionAr: string; shortDescription?: string; shortDescriptionAr?: string;
+  image: string; gallery: string[]; category: string; categoryAr?: string; location?: string; locationAr?: string; date?: string; endDate?: string; price?: number; priceLabel?: string;
+  features?: string[]; featuresAr?: string[]; services?: string[]; servicesAr?: string[]; relatedServiceIds?: string[]; relatedProductIds?: string[];
+  featured?: boolean; showOnHomepage?: boolean; active?: boolean; sortOrder?: number; createdAt?: string; updatedAt?: string;
+}
+
 export interface CartItem {
   id: string;
   productId: string;

@@ -1,17 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function QuotationPage() {
+  const searchParams = useSearchParams();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
+    title: searchParams.get("title") || "",
     company: "",
     name: "",
     phone: "",
     email: "",
     city: "",
-    category: "",
+    category: searchParams.get("category") || "",
     quantity: "",
     width: "",
     height: "",
@@ -252,6 +255,7 @@ export default function QuotationPage() {
                       className="light-input"
                     >
                       <option value="">اختر التصنيف</option>
+                      <option>تنظيم معارض</option>
                       <option>لافتات إعلانية وتجارية</option>
                       <option>ستاندات وتجهيز معارض</option>
                       <option>لوحات واجهات ومكاتب</option>

@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    if (!body.title || !body.quantity) {
+    if (!body.quantity) {
       return NextResponse.json(
         { message: "Title and quantity are required." },
         { status: 400 }
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     const quotation = await Quotation.create({
       userId: currentUser._id,
       quoteNumber,
-      title: body.title,
+      title: body.title || body.category || "طلب تسعير خاص",
       category: body.category || "مطابوعات عامة",
       quantity: Number(body.quantity),
       width: Number(body.width) || 0,

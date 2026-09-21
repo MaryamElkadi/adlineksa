@@ -101,6 +101,8 @@ export const Navbar: React.FC = () => {
             <Link href="/" className="hover:text-slate-900 transition-colors">الرئيسية</Link>
             <Link href="/categories" className="hover:text-slate-900 transition-colors">الفئات</Link>
             <Link href="/products" className="hover:text-slate-900 transition-colors">المنتجات</Link>
+            <Link href="/services" className="hover:text-slate-900 transition-colors">الخدمات</Link>
+            <Link href="/exhibitions" className="hover:text-slate-900 transition-colors">تنظيم معارض</Link>
             <Link href="/about" className="hover:text-slate-900 transition-colors">من نحن</Link>
             <Link href="/contact" className="hover:text-slate-900 transition-colors">اتصل بنا</Link>
             <Link href="/quote" className="text-amber-600 hover:text-amber-700 font-bold transition-colors">طلب عرض سعر</Link>

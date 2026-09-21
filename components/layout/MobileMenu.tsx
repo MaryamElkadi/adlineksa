@@ -44,6 +44,12 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
             <Link href="/products" onClick={onClose} className="hover:text-brand-blue">
               جميع المنتجات والمُهِّيئ
             </Link>
+            <Link href="/services" onClick={onClose} className="hover:text-brand-blue">
+              الخدمات
+            </Link>
+            <Link href="/exhibitions" onClick={onClose} className="hover:text-brand-blue">
+              تنظيم معارض
+            </Link>
             <Link href="/cart" onClick={onClose} className="hover:text-brand-blue">
               سلة التسوق
             </Link>

@@ -1,0 +1,1 @@
+import { ExhibitionForm } from "../exhibition-form"; export default function NewExhibition(){return <div dir="rtl" className="space-y-6"><div><h1 className="text-2xl font-black">إضافة معرض</h1><p className="mt-1 text-sm text-slate-500">أضف مشروع تنظيم معرض أو فعالية جديد.</p></div><ExhibitionForm/></div>;}

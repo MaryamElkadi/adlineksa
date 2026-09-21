@@ -2,9 +2,10 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Product } from '@/types';
+import { Product, Service } from '@/types';
 import { api } from '@/services/api';
 import { ProductCard } from '@/components/cards/ProductCard';
+import { ServiceCard } from '@/components/cards/ServiceCard';
 
 interface Props {
   title: string;
@@ -16,12 +17,26 @@ export const FeaturedProducts: React.FC<Props> = ({
   filter,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
 
   useEffect(() => {
-    api.getProducts()
-      .then(setProducts)
-      .catch(console.error);
-  }, []);
+    const load = async () => {
+      try {
+        const productList = await api.getProducts();
+        setProducts(productList);
+        // The featured homepage catalogue is shared by both entity types.
+        // Other product-only shelves retain their original behaviour.
+        if (filter === 'featured') {
+          // This endpoint filters and sorts in MongoDB, avoiding a full service
+          // catalogue download just to render this single homepage shelf.
+          setServices(await api.getFeaturedServices());
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    void load();
+  }, [filter]);
 
   const filteredProducts = useMemo(() => {
     switch (filter) {
@@ -51,7 +66,9 @@ export const FeaturedProducts: React.FC<Props> = ({
     }
   }, [products, filter]);
 
-  if (filteredProducts.length === 0) {
+  const featuredServices = filter === 'featured' ? services : [];
+
+  if (filteredProducts.length === 0 && featuredServices.length === 0) {
     return null;
   }
 
@@ -62,7 +79,7 @@ export const FeaturedProducts: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-8">
 
           <h2 className="text-3xl font-black text-brand-blue">
-            {title}
+            {filter === 'featured' ? '⭐ المنتجات والخدمات المميزة' : title}
           </h2>
 
           <Link
@@ -76,8 +93,17 @@ export const FeaturedProducts: React.FC<Props> = ({
 
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
 
-          {filteredProducts
+          {featuredServices
             .slice(0, 8)
+            .map((service) => (
+              <ServiceCard
+                key={`service-${service.id}`}
+                service={service}
+              />
+            ))}
+
+          {filteredProducts
+            .slice(0, filter === 'featured' ? Math.max(8, 16 - featuredServices.length) : 8)
             .map((product) => (
               <ProductCard
                 key={product.id}
