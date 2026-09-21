@@ -15,11 +15,31 @@ export default function AdminOrdersPage() {
 
   const load = () => {
     setLoading(true);
+    setError('');
     fetch('/api/orders?admin=true')
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then(async (response) => {
+        if (response.status === 401) {
+          setError('جلسة العمل غير صالحة أو غير مسجل كمدير. يرجى تسجيل الدخول مجدداً.');
+          setLoading(false);
+          return null;
+        }
+        if (response.status === 403) {
+          setError('غير مصرح لك بالوصول لجميع الطلبات (تتطلب صلاحية أدمن).');
+          setLoading(false);
+          return null;
+        }
+        if (!response.ok) {
+          setError('تعذر تحميل جميع الطلبات.');
+          setLoading(false);
+          return null;
+        }
+        return response.json();
+      })
       .then((data) => {
-        setOrders(Array.isArray(data) ? data : []);
-        setLoading(false);
+        if (data) {
+          setOrders(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
       })
       .catch(() => {
         setError('تعذر تحميل جميع الطلبات.');
@@ -32,13 +52,23 @@ export default function AdminOrdersPage() {
   }, []);
 
   async function updateStatus(id: string, status: UserOrder['status']) {
-    const response = await fetch(`/api/orders/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    if (response.ok) load();
-    else setError('تعذر تحديث حالة الطلب.');
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id || (o as any)._id === id ? { ...o, status } : o))
+    );
+    try {
+      const response = await fetch(`/api/orders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        setError('تعذر تحديث حالة الطلب.');
+        load();
+      }
+    } catch {
+      setError('حدث خطأ أثناء التحديث.');
+      load();
+    }
   }
 
   const filteredOrders = useMemo(() => {

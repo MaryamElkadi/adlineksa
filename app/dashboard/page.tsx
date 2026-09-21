@@ -171,11 +171,11 @@ export default function DashboardPage() {
           proofsRes,
           artworksRes,
         ] = await Promise.all([
-          fetch("/api/orders", { credentials: "include" }),
-          fetch("/api/quotes", { credentials: "include" }),
-          fetch("/api/tickets", { credentials: "include" }),
-          fetch("/api/proofs", { credentials: "include" }),
-          fetch("/api/artworks", { credentials: "include" }),
+          fetch("/api/orders", { credentials: "include", cache: "no-store" }),
+          fetch("/api/quotes", { credentials: "include", cache: "no-store" }),
+          fetch("/api/tickets", { credentials: "include", cache: "no-store" }),
+          fetch("/api/proofs", { credentials: "include", cache: "no-store" }),
+          fetch("/api/artworks", { credentials: "include", cache: "no-store" }),
         ]);
 
         const ordersData = ordersRes.ok ? await ordersRes.json() : [];
@@ -184,12 +184,23 @@ export default function DashboardPage() {
         const proofsData = proofsRes.ok ? await proofsRes.json() : [];
         const artworksData = artworksRes.ok ? await artworksRes.json() : [];
 
+        const calculateStep = (status: string) => {
+          switch (status) {
+            case 'Pending': return 1;
+            case 'In Production': return 2;
+            case 'Shipped': return 3;
+            case 'Delivered': return 4;
+            case 'Cancelled': return 0;
+            default: return 1;
+          }
+        };
+
         setOrders(
           Array.isArray(ordersData)
             ? ordersData.map((ord: any) => ({
                 ...ord,
                 number: ord.number || ord.orderNumber || `ORD-${ord._id?.slice(-4) || '0000'}`,
-                step: ord.step || (ord.status === 'Delivered' || ord.status === 'تم التوصيل' ? 4 : 2),
+                step: calculateStep(ord.status),
               }))
             : []
         );
@@ -512,17 +523,59 @@ export default function DashboardPage() {
                   {renderOrderItems(ord.items)}
                 </div>
 
-                <div className="space-y-2 pt-2">
-                  <div className="flex justify-between text-[11px] font-bold text-slate-400">
-                    <span className={(ord.step || 1) >= 1 ? 'text-amber-600 font-black' : ''}>1. تم الاستلام</span>
-                    <span className={(ord.step || 1) >= 2 ? 'text-amber-600 font-black' : ''}>2. قيد المراجعة</span>
-                    <span className={(ord.step || 1) >= 3 ? 'text-amber-600 font-black' : ''}>3. جاري الطباعة</span>
-                    <span className={(ord.step || 1) >= 4 ? 'text-amber-600 font-black' : ''}>4. تم التوصيل</span>
+                {/* 4-Step Order Progress Line */}
+                <div className="pt-2">
+                  <div className="grid grid-cols-4 gap-1 text-center text-[11px] font-bold mb-2">
+                    {[
+                      { num: 1, label: '1. تم الاستلام' },
+                      { num: 2, label: '2. قيد المراجعة' },
+                      { num: 3, label: '3. جاري الطباعة' },
+                      { num: 4, label: '4. تم التوصيل' },
+                    ].map((st) => {
+                      const stStr = ord.status as string;
+                      const activeStep =
+                        stStr === 'Delivered' || stStr === 'تم التوصيل'
+                          ? 4
+                          : stStr === 'Shipped' || stStr === 'تم الشحن'
+                          ? 3
+                          : stStr === 'In Production' || stStr === 'جاري التنفيذ' || stStr === 'قيد التنفيذ'
+                          ? 3
+                          : 1;
+
+                      const isDone = st.num < activeStep || activeStep === 4;
+                      const isCurrent = st.num === activeStep && activeStep !== 4;
+
+                      return (
+                        <div
+                          key={st.num}
+                          className={`transition-all ${
+                            isDone
+                              ? 'text-emerald-700 font-black'
+                              : isCurrent
+                              ? 'text-amber-600 font-black scale-105'
+                              : 'text-slate-400 font-medium'
+                          }`}
+                        >
+                          {st.label}
+                        </div>
+                      );
+                    })}
                   </div>
+
                   <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
                     <div
-                      className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500 shadow-2xs"
-                      style={{ width: `${((ord.step || 1) / 4) * 100}%` }}
+                      className="h-full bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-500 rounded-full transition-all duration-500 shadow-2xs"
+                      style={{
+                        width: `${
+                          (ord.status as string) === 'Delivered' || (ord.status as string) === 'تم التوصيل'
+                            ? 100
+                            : (ord.status as string) === 'Shipped' || (ord.status as string) === 'تم الشحن'
+                            ? 85
+                            : (ord.status as string) === 'In Production' || (ord.status as string) === 'جاري التنفيذ' || (ord.status as string) === 'قيد التنفيذ'
+                            ? 65
+                            : 25
+                        }%`,
+                      }}
                     />
                   </div>
                 </div>

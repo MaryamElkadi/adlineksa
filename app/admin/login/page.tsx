@@ -12,13 +12,28 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('Adline@2026');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'admin@adlineksa.com' && password === 'Adline@2026') {
-      localStorage.setItem('adline_admin_authenticated', 'true');
-      router.push('/admin');
-    } else {
-      setError('Invalid admin credentials. Use admin@adlineksa.com / Adline@2026');
+    setError('');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.user) {
+        if (data.user.role !== 'admin') {
+          setError('هذا الحساب لا يملك صلاحيات مدير النظام.');
+          return;
+        }
+        localStorage.setItem('adline_admin_authenticated', 'true');
+        router.push('/admin');
+      } else {
+        setError(data.message || 'بيانات الدخول غير صحيحة. استخدم admin@adlineksa.com / Adline@2026');
+      }
+    } catch {
+      setError('حدث خطأ أثناء الاتصال بالخادم.');
     }
   };
 

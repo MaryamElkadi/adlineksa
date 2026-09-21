@@ -58,6 +58,11 @@ export default function AccountPage() {
           <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             <Input label="البريد الإلكتروني" type="email" placeholder="name@company.com" required />
             <Input label="كلمة المرور" type="password" placeholder="••••••••" required />
+            <div className="flex justify-end pt-1">
+              <a href="/forgot-password" className="text-xs text-amber-700 font-bold hover:underline">
+                نسيت كلمة المرور؟
+              </a>
+            </div>
             <Button
               type="submit"
               variant="yellow"

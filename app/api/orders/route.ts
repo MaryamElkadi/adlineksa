@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 
 import { connectToDatabase } from "@/lib/mongodb";
 import Order from "@/models/Order";
-import { getCurrentUserId } from "@/lib/currentUser";
+import { getCurrentUser } from "@/lib/currentUser";
+import { ensureInitialCatalog } from "@/lib/seed";
+
+export const dynamic = "force-dynamic";
 
 function serializeOrder(order: any) {
-  const value = order.toObject();
+  const value = order.toObject ? order.toObject() : order;
 
   return {
     ...value,
@@ -21,26 +24,36 @@ function serializeOrder(order: any) {
 // GET ORDERS (Support Admin all orders & filtering)
 export async function GET(request: Request) {
   try {
-    const userId = await getCurrentUserId();
+    await connectToDatabase();
+    await ensureInitialCatalog();
 
-    if (!userId) {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    await connectToDatabase();
-
     const { searchParams } = new URL(request.url);
     const isAdmin = searchParams.get("admin") === "true" || searchParams.get("all") === "true";
     const statusFilter = searchParams.get("status") || "";
     const searchFilter = searchParams.get("search") || "";
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+
+    if (isAdmin && currentUser.role !== "admin") {
+      return NextResponse.json(
+        { message: "Forbidden: Admin access required" },
+        { status: 403 }
+      );
+    }
 
     const query: any = {};
 
     if (!isAdmin) {
-      query.userId = userId;
+      query.userId = currentUser._id;
     }
 
     if (statusFilter && statusFilter !== "all" && statusFilter !== "الكل") {
@@ -55,6 +68,41 @@ export async function GET(request: Request) {
         { "customer.email": searchRegex },
         { "customer.phone": searchRegex },
       ];
+    }
+
+    const page = pageParam ? parseInt(pageParam, 10) : 0;
+    const limit = limitParam ? parseInt(limitParam, 10) : 0;
+
+    if (page > 0 && limit > 0) {
+      const total = await Order.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+
+      const orders = await Order.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const formattedOrders = orders.map((order: any) => ({
+        ...order,
+        _id: order._id.toString(),
+        id: order._id.toString(),
+        date: order.createdAt
+          ? new Date(order.createdAt).toISOString().slice(0, 10)
+          : "",
+        itemsCount: order.items?.length || 0,
+      }));
+
+      return NextResponse.json({
+        orders: formattedOrders,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      });
     }
 
     const orders = await Order.find(query)
@@ -85,9 +133,9 @@ export async function GET(request: Request) {
 // CREATE ORDER FOR CURRENT USER
 export async function POST(request: Request) {
   try {
-    const userId = await getCurrentUserId();
+    const currentUser = await getCurrentUser();
 
-    if (!userId) {
+    if (!currentUser) {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 401 }
@@ -120,7 +168,7 @@ export async function POST(request: Request) {
       ...body,
 
       // IMPORTANT
-      userId,
+      userId: currentUser._id,
 
       orderNumber: `ADL-${Date.now()
         .toString()

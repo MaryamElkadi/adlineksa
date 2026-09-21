@@ -5,10 +5,12 @@ import { cookies } from "next/headers";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { createToken } from "@/lib/auth";
+import { ensureInitialCatalog } from "@/lib/seed";
 
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
+    await ensureInitialCatalog();
 
     const { email, password } = await req.json();
 
