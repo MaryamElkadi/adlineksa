@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/Card';
+import CommunicationSettings from '@/components/admin/CommunicationSettings';
 
 export default function AdminSettingsPage() {
   return (
@@ -46,6 +47,8 @@ export default function AdminSettingsPage() {
 
       {/* Settings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CommunicationSettings />
+
         {/* Tax & Delivery Rates */}
         <Card hoverEffect={false} className="border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow bg-white">
           <h2 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">

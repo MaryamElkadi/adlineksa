@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { connectToDatabase } from "@/lib/mongodb";
 import Service from "@/models/Service";
 import Product from "@/models/Product";
@@ -61,9 +62,13 @@ export default async function ServiceDetails({
     >
       <section className="grid gap-8 lg:grid-cols-2 lg:items-center">
         <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-lg">
-          <img
+          <Image
             src={service.image || "/products/printing.png"}
             alt={service.titleAr || service.title}
+            width={1200}
+            height={900}
+            priority
+            sizes="(max-width: 1024px) 100vw, 50vw"
             className="aspect-[4/3] h-full w-full object-cover"
           />
         </div>

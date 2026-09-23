@@ -102,11 +102,20 @@ export const Footer: React.FC = () => {
             </h4>
             <div className="space-y-2.5 text-xs font-medium">
               <p>📞 الهاتف: 12345 9200 966+</p>
-              <p>💬 واتساب: 4567 123 50 966+</p>
+              <p>
+                <a
+                  href={`https://wa.me/${(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '966503502717').replace(/\D/g, '')}?text=${encodeURIComponent('مرحباً، أريد الاستفسار عن خدمات خط الإعلان.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-emerald-600"
+                >
+                  💬 واتساب: 4567 123 50 966+
+                </a>
+              </p>
               <p>✉️ البريد الإلكتروني: support@adlineksa.com</p>
               <p>🕒 أوقات العمل: الأحد - الخميس (8:00 صباحاً - 6:00 مساءً)</p>
             </div>
-            <div className="mt-5 max-w-[210px]">
+            <div className="mt-5 max-w-52.5">
               <ProductsQrCode />
             </div>
           </div>

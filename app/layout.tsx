@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import FloatingContact from "@/components/floating-contact/FloatingContact";
 
 const merriweather = Merriweather({
   subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-grow">{children}</main>
         <Footer />
+        <FloatingContact />
       </body>
     </html>
   );
