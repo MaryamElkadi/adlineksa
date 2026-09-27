@@ -230,7 +230,6 @@ export const Hero: React.FC<HeroProps> = ({ initialHeroItems = [] }) => {
                   src={activeProduct.image}
                   alt={activeProduct.name}
                   fill
-                  priority
                   sizes="(max-width: 1024px) 100vw, 55vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />

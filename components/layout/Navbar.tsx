@@ -81,8 +81,8 @@ export const Navbar: React.FC = () => {
                 alt="Adline KSA"
                 width={40}
                 height={40}
+                loading="eager"
                 className="w-full h-full object-cover"
-                priority
               />
             </div>
 

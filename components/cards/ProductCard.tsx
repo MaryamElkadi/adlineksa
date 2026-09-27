@@ -22,6 +22,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             src={product.image || '/products/printing.png'}
             alt={product.nameAr || product.name}
             fill
+            loading="lazy"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />

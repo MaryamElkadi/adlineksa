@@ -7,7 +7,7 @@ export function ServiceCard({ service }: { service: Service }) {
   const image = service.image || "/products/printing.png";
   return <article dir="rtl" className="group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl">
     <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-      <Image src={image} alt={service.titleAr || service.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" quality={72} className="object-cover transition-transform duration-500 group-hover:scale-105" />
+      <Image src={image} alt={service.titleAr || service.title} fill loading="lazy" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" quality={72} className="object-cover transition-transform duration-500 group-hover:scale-105" />
       {service.featured && <span className="absolute right-3 top-3 rounded-full bg-amber-400 px-3 py-1 text-[11px] font-black text-slate-900 shadow">خدمة مميزة</span>}
     </div>
     <div className="flex flex-1 flex-col p-5">
