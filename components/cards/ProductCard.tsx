@@ -1,7 +1,6 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -19,10 +18,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-400 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between h-full"
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-          <img
-            src={product.image}
+          <Image
+            src={product.image || '/products/printing.png'}
             alt={product.nameAr || product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           {product.badge && (
             <div className="absolute top-3 right-3">
@@ -35,7 +36,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div>
             <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-1">
               <span className="capitalize">
-                {product.categorySlug.replace('-', ' ')}
+                {product.categorySlug?.replace('-', ' ') || 'منتج'}
               </span>
               <span className="flex items-center gap-1 text-amber-600 font-bold">
                 ★ {product.rating}{' '}
@@ -51,27 +52,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </p>
           </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between pt-3 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between pt-3 border-t border-slate-100">
+            <div>
+              <span className="text-[10px] text-slate-400 block">يبدأ من</span>
+              <span className="text-lg font-black text-brand-blue">{formatCurrency(product.basePrice)}</span>
+            </div>
 
-    <div>
-        <span className="text-[10px] text-slate-400 block">
-            يبدأ من
-        </span>
-
-        <span className="text-lg font-black text-brand-blue">
-            {formatCurrency(product.basePrice)}
-        </span>
-    </div>
-
-    <Button
-        size="sm"
-        variant="yellow"
-        className="w-full sm:w-auto"
-    >
-        تخصيص →
-    </Button>
-
-</div>
+            <Button size="sm" variant="yellow" className="w-full sm:w-auto">
+              تخصيص →
+            </Button>
+          </div>
         </div>
       </div>
     </Link>

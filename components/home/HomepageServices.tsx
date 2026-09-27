@@ -1,12 +1,9 @@
-"use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Service } from "@/types";
 import { ServiceCard } from "@/components/cards/ServiceCard";
 
-export function HomepageServices() {
-  const [services, setServices] = useState<Service[]>([]);
-  useEffect(() => { fetch("/api/services/homepage").then((r) => r.ok ? r.json() : []).then(setServices).catch(() => {}); }, []);
+export function HomepageServices({ initialServices = [] }: { initialServices?: Service[] }) {
+  const services = initialServices;
   if (!services.length) return null;
   return <section dir="rtl" className="bg-slate-50 py-16">
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

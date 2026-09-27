@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { TESTIMONIALS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';

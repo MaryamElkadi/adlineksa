@@ -1,13 +1,13 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Category } from '@/types';
-import { api } from '@/services/api';
 import { CategoryCard } from '@/components/cards/CategoryCard';
 
-export const Categories: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  useEffect(() => { api.getCategories().then(setCategories).catch(console.error); }, []);
+interface Props {
+  initialCategories?: Category[];
+}
+
+export const Categories: React.FC<Props> = ({ initialCategories = [] }) => {
+  const categories = initialCategories;
 
   return (
     <section className="py-16 bg-slate-50" dir="rtl">
