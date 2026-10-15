@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         scope: event.data.scope || "",
         tokenType: event.data.token_type || "Bearer",
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
   }
 

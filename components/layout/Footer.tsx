@@ -4,15 +4,16 @@ import React from 'react';
 import Link from 'next/link';
 import { ProductsQrCode } from './ProductsQrCode';
 
+const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '966549362553').replace(/\D/g, '');
+
 export const Footer: React.FC = () => {
   return (
-    <footer dir="rtl" className="bg-white border-t border-slate-200 text-slate-600 pt-16 pb-12 mt-20 text-right">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-slate-200">
-          {/* Company Brand Column */}
+    <footer dir="rtl" className="mt-20 border-t border-slate-200 bg-white pt-16 pb-12 text-right text-slate-600">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 border-b border-slate-200 pb-12 md:grid-cols-4">
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-brand-blue flex items-center justify-center text-amber-400 font-black text-lg shadow-sm">
+            <Link href="/" className="flex items-center gap-3" aria-label="العودة إلى الصفحة الرئيسية">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-blue text-lg font-black text-amber-400 shadow-sm">
                 A
               </div>
               <span className="text-xl font-black text-brand-blue">
@@ -22,85 +23,64 @@ export const Footer: React.FC = () => {
             <p className="text-xs leading-relaxed text-slate-500">
               المنصة الرائدة للطباعة الرقمية والإعلانات في المملكة العربية السعودية. جودة عالية للشركات، شحن سريع، وحساب فوري وذكّي للأسعار.
             </p>
-            <div className="text-xs text-amber-600 font-bold">
-              📍 ا الدمام | الخبر
-            </div>
+            <div className="text-xs font-bold text-amber-600">📍 الدمام | الخبر</div>
           </div>
 
-          {/* Categories Links */}
           <div>
-            <h4 className="text-xs font-black text-brand-blue uppercase tracking-wider mb-4">
+            <h4 className="mb-4 text-xs font-black uppercase tracking-wider text-brand-blue">
               أقسام الطباعة
             </h4>
             <ul className="space-y-2.5 text-xs font-semibold">
-              <li>
-                <Link href="/categories" className="hover:text-brand-blue transition-colors">
-                  الكروت الشخصية والمطبوعات المكتبية
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="hover:text-brand-blue transition-colors">
-                  الرول أب والبنرات الإعلانية
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="hover:text-brand-blue transition-colors">
-                  الصناديق والتغليف المخصص
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="hover:text-brand-blue transition-colors">
-                  الفلايرز والبروشورات
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="hover:text-brand-blue transition-colors">
-                  ملصقات الاستيكر المخصصة
-                </Link>
-              </li>
+              {[
+                'الكروت الشخصية والمطبوعات المكتبية',
+                'الرول أب والبنرات الإعلانية',
+                'الصناديق والتغليف المخصص',
+                'الفلايرز والبروشورات',
+                'ملصقات الاستيكر المخصصة',
+              ].map((label) => (
+                <li key={label}>
+                  <Link href="/categories" className="transition-colors hover:text-brand-blue">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h4 className="text-xs font-black text-brand-blue uppercase tracking-wider mb-4">
+            <h4 className="mb-4 text-xs font-black uppercase tracking-wider text-brand-blue">
               العملاء والإدارة
             </h4>
             <ul className="space-y-2.5 text-xs font-semibold">
               <li>
-            
-              </li>
-              <li>
-                <Link href="/account" className="hover:text-brand-blue transition-colors">
+                <Link href="/account" className="transition-colors hover:text-brand-blue">
                   تسجيل الدخول / الحساب
                 </Link>
               </li>
               <li>
-              
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-brand-blue transition-colors">
+                <Link href="/about" className="transition-colors hover:text-brand-blue">
                   عن خط الإعلان السعودية
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-brand-blue transition-colors">
+                <Link href="/contact" className="transition-colors hover:text-brand-blue">
                   تواصل مع فريق الدعم
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact & Support */}
           <div>
-            <h4 className="text-xs font-black text-brand-blue uppercase tracking-wider mb-4">
+            <h4 className="mb-4 text-xs font-black uppercase tracking-wider text-brand-blue">
               خط الدعم المباشر
             </h4>
             <div className="space-y-2.5 text-xs font-medium">
-              <p>📞 الهاتف: <a href="tel:+966549362553" dir="ltr">+966 54 936 2553</a></p>
+              <p>
+                📞 الهاتف: <a href="tel:+966549362553" dir="ltr" className="text-slate-600 hover:text-brand-blue">+966 54 936 2553</a>
+              </p>
               <p>
                 <a
-                  href={`https://wa.me/${(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '966549362553').replace(/\D/g, '')}?text=${encodeURIComponent('مرحباً، أريد الاستفسار عن خدمات خط الإعلان.')}`}
+                  href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('مرحباً، أريد الاستفسار عن خدمات خط الإعلان.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition-colors hover:text-emerald-600"
@@ -111,18 +91,15 @@ export const Footer: React.FC = () => {
               <p>✉️ البريد الإلكتروني: sales@adlineksa.com</p>
               <p>🕒 أوقات العمل: الأحد - الخميس (8:00 صباحاً - 12:30 مساءً)</p>
             </div>
-            <div className="mt-5 max-w-52.5">
+            <div className="mt-5 max-w-[13rem]">
               <ProductsQrCode />
             </div>
           </div>
         </div>
 
-        {/* Footer Bottom */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 pt-8 text-xs text-slate-500 sm:flex-row">
           <p>© {new Date().getFullYear()} خط الإعلان السعودية. جميع الحقوق محفوظة.</p>
-          <div className="flex items-center gap-4 text-slate-600 font-semibold">
-          
-          </div>
+          <div className="flex items-center gap-4 font-semibold text-slate-600" />
         </div>
       </div>
     </footer>

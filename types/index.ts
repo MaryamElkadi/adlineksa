@@ -48,7 +48,7 @@ export interface ConfigOption {
 
 export interface QuantityTier {
   quantity: number;   // e.g. 100, 250, 500
-  unitPrice: number;  // e.g. 5.50 EGP per unit
+  unitPrice: number;  // Saudi riyals per unit
 }
 
 export interface ImageMedia {
@@ -95,6 +95,7 @@ export interface Product {
 
   // Pricing
   basePrice: number;
+  designFee?: number;
   salePrice?: number;
   discount?: number;
 

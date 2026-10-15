@@ -15,7 +15,7 @@ export async function GET(request: Request, context: RouteContext<"/api/services
 }
 export async function PUT(request: Request, context: RouteContext<"/api/services/[id]">) {
   const auth = await requireAdmin(); if (auth.response) return auth.response;
-  try { const { id } = await context.params; await connectToDatabase(); const body = await request.json() as Record<string, unknown>; if (!prepareMediaBody(body)) return NextResponse.json({ message: "Service media is invalid. Use HTTPS image URLs and supported video providers." }, { status: 400 }); const service = await Service.findByIdAndUpdate(id, body, { new: true, runValidators: true }); return service ? NextResponse.json(serializeDocument(service)) : NextResponse.json({ message: "Service not found" }, { status: 404 }); }
+  try { const { id } = await context.params; await connectToDatabase(); const body = await request.json() as Record<string, unknown>; if (!prepareMediaBody(body)) return NextResponse.json({ message: "Service media is invalid. Use HTTPS image URLs and supported video providers." }, { status: 400 }); const service = await Service.findByIdAndUpdate(id, body, { returnDocument: "after", runValidators: true }); return service ? NextResponse.json(serializeDocument(service)) : NextResponse.json({ message: "Service not found" }, { status: 404 }); }
   catch (error: unknown) { const duplicate = error instanceof Error && "code" in error && (error as { code?: number }).code === 11000; return NextResponse.json({ message: duplicate ? "This service slug is already in use." : "Could not update service" }, { status: duplicate ? 409 : 500 }); }
 }
 export const PATCH = PUT;

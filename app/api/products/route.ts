@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { connectToDatabase } from "@/lib/mongodb";
 import { serializeDocument } from "@/lib/serializers";
 import Product from "@/models/Product";
@@ -145,6 +146,7 @@ export async function POST(request: Request) {
       try {
         const product = await Product.create(body);
         console.log(`Product created: ${product.name} (SKU: ${product.sku})`);
+        revalidatePath("/", "page");
         return NextResponse.json(serializeDocument(product), { status: 201 });
       } catch (error: unknown) {
         if (isSkuDuplicateError(error)) {

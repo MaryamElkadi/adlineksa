@@ -7,7 +7,7 @@ import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/forms/Input';
 import { Modal } from '@/components/ui/Modal';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getProductStartingPriceDetails } from '@/lib/utils';
 import Swal from 'sweetalert2';
 import { MediaManager } from '@/components/media/MediaManager';
 
@@ -29,6 +29,7 @@ const initialFormState: ProductFormState = {
   slug: '',
   categorySlug: '',
   basePrice: 100,
+  designFee: 75,
   salePrice: undefined,
   discount: 0,
   minQuantity: 1,
@@ -240,6 +241,7 @@ export default function AdminProductsPage() {
       videos: formData.videos || [],
       gallery: finalImages.filter((image) => image.url !== finalImage).map((image) => image.url),
       basePrice: Number(formData.basePrice) || 0,
+      designFee: Number(formData.designFee ?? 75),
       salePrice: formData.salePrice ? Number(formData.salePrice) : undefined,
       discount: formData.discount ? Number(formData.discount) : 0,
       minQuantity: Number(formData.minQuantity) || 1,
@@ -355,13 +357,19 @@ export default function AdminProductsPage() {
                 {marketplace && <th className="p-4">اختيار</th>}
                 <th className="p-4">المنتج</th>
                 <th className="p-4">الفئة</th>
-                <th className="p-4">السعر الأساسي</th>
+                <th className="p-4">أقل سعر للقطعة</th>
                 <th className="p-4">شرائح الكميات</th>
                 <th className="p-4 text-left">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {productList.map((product) => (
+              {productList.map((product) => {
+                const startingPrice = getProductStartingPriceDetails(
+                  product.basePrice,
+                  product.configurableQuantityTiers
+                );
+
+                return (
                 <tr key={product.id} className="hover:bg-amber-50/30 transition-colors">
                   {marketplace && (
                     <td className="p-4">
@@ -397,7 +405,14 @@ export default function AdminProductsPage() {
                       {categoryLabel(product.categorySlug)}
                     </span>
                   </td>
-                  <td className="p-4 font-black text-amber-600 text-sm">{formatCurrency(product.basePrice)}</td>
+                  <td className="p-4">
+                    <span className="block font-black text-amber-600 text-sm">
+                      {formatCurrency(startingPrice.unitPrice)}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      للقطعة عند {startingPrice.quantity} قطعة
+                    </span>
+                  </td>
                   <td className="p-4">
                     <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">
                       {product.configurableQuantityTiers?.length || product.quantityTiers?.length || 0} شرائح أسعار
@@ -418,7 +433,8 @@ export default function AdminProductsPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -626,6 +642,18 @@ export default function AdminProductsPage() {
             </div>
 
             <div className="space-y-2">
+              <div className="max-w-xs">
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  رسوم التصميم عند الطلب (ر.س)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.designFee ?? 75}
+                  onChange={(e) => setFormData({ ...formData, designFee: Number(e.target.value) })}
+                />
+              </div>
               {(formData.quantitiesList || []).map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-amber-200/50">
                   <div className="flex-1 flex items-center gap-1">
@@ -665,7 +693,7 @@ export default function AdminProductsPage() {
           {/* Section 3: Material, Size, & Finish Pricing */}
           <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/60 space-y-4">
             <div className="border-b border-amber-200/80 pb-2">
-              <span className="text-xs font-black text-amber-900 block">🎛️ زيادات الخامات والمقاسات (+EGP)</span>
+              <span className="text-xs font-black text-amber-900 block">🎛️ زيادات الخامات والمقاسات (ر.س)</span>
             </div>
 
             {/* Materials */}
@@ -692,6 +720,7 @@ export default function AdminProductsPage() {
                       <span className="text-[10px] font-bold text-slate-500">+</span>
                       <Input
                         type="number"
+                        step="0.01"
                         placeholder="إضافة سعر"
                         value={item.priceModifier}
                         onChange={(e) => handleOptionChange('materialsList', idx, 'priceModifier', Number(e.target.value))}
@@ -733,6 +762,7 @@ export default function AdminProductsPage() {
                       <span className="text-[10px] font-bold text-slate-500">+</span>
                       <Input
                         type="number"
+                        step="0.01"
                         placeholder="إضافة سعر"
                         value={item.priceModifier}
                         onChange={(e) => handleOptionChange('sizesList', idx, 'priceModifier', Number(e.target.value))}
@@ -774,6 +804,7 @@ export default function AdminProductsPage() {
                       <span className="text-[10px] font-bold text-slate-500">+</span>
                       <Input
                         type="number"
+                        step="0.01"
                         placeholder="إضافة سعر"
                         value={item.priceModifier}
                         onChange={(e) => handleOptionChange('finishesList', idx, 'priceModifier', Number(e.target.value))}

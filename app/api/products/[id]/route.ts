@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { connectToDatabase } from "@/lib/mongodb";
 import { serializeDocument } from "@/lib/serializers";
 import Product from "@/models/Product";
@@ -92,7 +93,7 @@ export async function PATCH(
     if (skuError) return skuError;
 
     const product = await Product.findByIdAndUpdate(id, body, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 
@@ -103,6 +104,7 @@ export async function PATCH(
       );
     }
 
+    revalidatePath("/", "page");
     return NextResponse.json(serializeDocument(product));
   } catch (error) {
     if (isSkuDuplicateError(error)) {
@@ -141,13 +143,14 @@ export async function PUT(request: Request, context: RouteContext<"/api/products
     if (skuError) return skuError;
 
     const product = await Product.findByIdAndUpdate(id, body, {
-      new: true,
+      returnDocument: "after",
       overwrite: true, // replace the whole document
       runValidators: true,
     });
     if (!product) {
       return NextResponse.json({ message: "Product not found." }, { status: 404 });
     }
+    revalidatePath("/", "page");
     return NextResponse.json(serializeDocument(product));
   } catch (error) {
     if (isSkuDuplicateError(error)) {
@@ -185,6 +188,7 @@ export async function DELETE(
       );
     }
 
+    revalidatePath("/", "page");
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error(error);

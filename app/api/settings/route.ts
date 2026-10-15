@@ -40,7 +40,7 @@ export async function PATCH(request: Request) {
     const settings = await SiteSettings.findOneAndUpdate(
       { key: "default" },
       { $set: update, $setOnInsert: { key: "default" } },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
     ).lean();
 
     return NextResponse.json(normalizeSiteSettings(settings));

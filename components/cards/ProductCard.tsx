@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Product } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getProductStartingPriceDetails } from '@/lib/utils';
 import { isOptimizableImageUrl } from '@/lib/media';
 
 interface ProductCardProps {
@@ -12,6 +12,11 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const startingPrice = getProductStartingPriceDetails(
+    product.basePrice,
+    product.configurableQuantityTiers
+  );
+
   return (
     <Link href={`/products/${product.slug}`} className="block h-full">
       <div
@@ -59,7 +64,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between pt-3 border-t border-slate-100">
             <div>
               <span className="text-[10px] text-slate-400 block">يبدأ من</span>
-              <span className="text-lg font-black text-brand-blue">{formatCurrency(product.basePrice)}</span>
+              <span className="text-lg font-black text-brand-blue">{formatCurrency(startingPrice.unitPrice)}</span>
+              <span className="block text-[10px] text-slate-400">
+                للقطعة عند {startingPrice.quantity} قطعة
+              </span>
             </div>
 
             <Button size="sm" variant="yellow" className="w-full sm:w-auto">

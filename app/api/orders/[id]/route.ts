@@ -47,7 +47,7 @@ export async function PATCH(
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!updatedOrder) {
@@ -113,4 +113,3 @@ export async function GET(
     );
   }
 }
-

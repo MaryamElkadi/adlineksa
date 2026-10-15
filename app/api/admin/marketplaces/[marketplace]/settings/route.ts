@@ -77,7 +77,7 @@ export async function PATCH(request: Request, context: RouteContext<'/api/admin/
       if (payload.refreshToken) update.refreshToken = payload.refreshToken;
       else if (existing?.refreshToken) update.refreshToken = existing.refreshToken;
     }
-    const rec = await MarketplaceConnection.findOneAndUpdate({ marketplace: mp }, { $set: update }, { new: true, upsert: true });
+    const rec = await MarketplaceConnection.findOneAndUpdate({ marketplace: mp }, { $set: update }, { returnDocument: "after", upsert: true });
     return NextResponse.json(safeSettings(rec));
   } catch (err: any) {
     console.error(err);

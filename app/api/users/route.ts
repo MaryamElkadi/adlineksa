@@ -95,7 +95,7 @@ export async function PATCH(request: Request) {
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
+      returnDocument: "after",
     }).lean();
 
     if (!updatedUser) {

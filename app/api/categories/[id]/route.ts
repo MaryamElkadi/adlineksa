@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: RouteContext<'/api/cat
     const { id } = await params;
     const body = await request.json();
     await connectToDatabase();
-    const category = await Category.findByIdAndUpdate(id, body, { new: true, runValidators: true });
+    const category = await Category.findByIdAndUpdate(id, body, { returnDocument: "after", runValidators: true });
     return category ? NextResponse.json(serializeDocument(category)) : NextResponse.json({ message: "Category not found" }, { status: 404 });
   } catch (error: unknown) {
     const duplicate = error instanceof Error && "code" in error && (error as { code?: number }).code === 11000;

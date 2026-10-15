@@ -30,7 +30,7 @@ export async function DELETE(request: Request, context: RouteContext<'/api/admin
       status: 'disconnected',
       accountName: null,
     };
-    const rec = await MarketplaceConnection.findOneAndUpdate({ marketplace: mp }, update, { new: true });
+    const rec = await MarketplaceConnection.findOneAndUpdate({ marketplace: mp }, update, { returnDocument: "after" });
     if (!rec) {
       // If no record existed, create a baseline record as disconnected
       const newRec = await MarketplaceConnection.create({ marketplace: mp, ...update });

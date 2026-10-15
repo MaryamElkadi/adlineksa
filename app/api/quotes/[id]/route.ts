@@ -17,7 +17,7 @@ export async function PATCH(
     id,
     body,
     {
-      new: true,
+      returnDocument: "after",
     }
   );
 

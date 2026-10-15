@@ -3,31 +3,48 @@
 import React, { useState } from 'react';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { calculateConfiguredPrice, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/useCart';
 
 interface SmartConfiguratorProps {
   product: Product;
 }
 
+function getInitialQuantity(product: Product) {
+  const minimum = Math.max(1, Number(product.minQuantity) || 1);
+  const tiers = (product.configurableQuantityTiers || [])
+    .filter((tier) => Number.isFinite(tier.quantity) && tier.quantity > 0)
+    .sort((a, b) => a.quantity - b.quantity);
+
+  return tiers.find((tier) => tier.quantity >= minimum)?.quantity
+    ?? tiers[0]?.quantity
+    ?? minimum;
+}
+
 export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product }) => {
   const { addItem } = useCart();
 
-  const [selectedSize, setSelectedSize] = useState(product.availableSizes[0] || 'قياسي');
-  const [selectedMaterial, setSelectedMaterial] = useState(product.materials[0] || 'افتراضي');
-  const [quantity, setQuantity] = useState(product.minQuantity || 100);
-  const [lamination, setLamination] = useState<'none' | 'gloss' | 'velvet' | 'foil'>('none');
+  const materialOptions = product.configurableMaterials?.length
+    ? product.configurableMaterials.map((option) => option.label)
+    : product.materials;
+  const sizeOptions = product.configurableSizes?.length
+    ? product.configurableSizes.map((option) => option.label)
+    : product.availableSizes;
+
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || 'قياسي');
+  const [selectedMaterial, setSelectedMaterial] = useState(materialOptions[0] || 'افتراضي');
+  const [quantity, setQuantity] = useState(() => getInitialQuantity(product));
+  const [lamination, setLamination] = useState(
+    product.configurableFinishes?.[0]?.label || 'none'
+  );
   const [customNotes, setCustomNotes] = useState('');
   const [fileUploaded, setFileUploaded] = useState<string | null>(null);
   const [isAdded, setIsAdded] = useState(false);
   const [needDesign, setNeedDesign] = useState(false);
   const [designBrief, setDesignBrief] = useState('');
 
-  // Direct tier price as written in the box
   const matchingTier = product.configurableQuantityTiers?.find((t) => t.quantity === quantity);
-  const baseTierPrice = matchingTier
-    ? matchingTier.unitPrice
-    : product.basePrice || 0;
+  const baseUnitPrice = matchingTier?.unitPrice ?? product.basePrice ?? 0;
 
   const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
   const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
@@ -36,11 +53,28 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const matAddon = matOption ? matOption.priceModifier : 0;
   const sizeAddon = sizeOption ? sizeOption.priceModifier : 0;
   const finishAddon = finishOption ? finishOption.priceModifier : 0;
-  const lamAddon = lamination === 'foil' ? 15 : lamination === 'velvet' ? 10 : lamination === 'gloss' ? 5 : 0;
-  const DESIGN_FEE = needDesign ? 75 : 0;
+  const DESIGN_FEE = needDesign ? product.designFee ?? 75 : 0;
 
-  const totalCalculatedPrice = Math.max(0, baseTierPrice + matAddon + sizeAddon + finishAddon + lamAddon + DESIGN_FEE);
+  const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE;
+  const totalCalculatedPrice = Math.max(0, baseUnitPrice * quantity + addOnPrice);
   const unitCalculatedPrice = Math.round((totalCalculatedPrice / Math.max(1, quantity)) * 100) / 100;
+  const quantityOptions = product.configurableQuantityTiers?.length
+    ? [...new Set(product.configurableQuantityTiers.map((tier) => tier.quantity))]
+        .filter((tierQuantity) => Number.isFinite(tierQuantity) && tierQuantity > 0)
+        .sort((a, b) => a - b)
+    : [100, 250, 500, 1000, 2500];
+  const finishOptions = product.configurableFinishes?.length
+    ? product.configurableFinishes.map((finish) => ({
+        id: finish.label,
+        label: finish.label,
+        priceModifier: finish.priceModifier,
+      }))
+    : [
+        { id: 'none', label: 'مطفي قياسي', priceModifier: 0 },
+        { id: 'gloss', label: 'لامع UV', priceModifier: 0 },
+        { id: 'velvet', label: 'مخملي ناعم', priceModifier: 0 },
+        { id: 'foil', label: 'بصمة ذهبية معدنية', priceModifier: 0 },
+      ];
 
 
   const handleAddToCart = () => {
@@ -56,7 +90,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       totalPrice: totalCalculatedPrice,
       customNotes,
       fileUrl: fileUploaded || undefined,
-    } as any);
+    });
 
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2500);
@@ -80,19 +114,23 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           1. اختر خامة الورق والمادة
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {product.materials.map((mat) => (
-            <button
-              key={mat}
-              onClick={() => setSelectedMaterial(mat)}
-              className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
-                selectedMaterial === mat
-                  ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
-                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              {mat}
-            </button>
-          ))}
+          {materialOptions.map((mat) => {
+            const priceModifier = product.configurableMaterials?.find((option) => option.label === mat)?.priceModifier || 0;
+            return (
+              <button
+                key={mat}
+                onClick={() => setSelectedMaterial(mat)}
+                className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
+                  selectedMaterial === mat
+                    ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <span>{mat}</span>
+                {priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(priceModifier)}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -102,19 +140,23 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           2. اختر المقاس والأبعاد
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {product.availableSizes.map((sz) => (
-            <button
-              key={sz}
-              onClick={() => setSelectedSize(sz)}
-              className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
-                selectedSize === sz
-                  ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
-                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              {sz}
-            </button>
-          ))}
+          {sizeOptions.map((sz) => {
+            const priceModifier = product.configurableSizes?.find((option) => option.label === sz)?.priceModifier || 0;
+            return (
+              <button
+                key={sz}
+                onClick={() => setSelectedSize(sz)}
+                className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
+                  selectedSize === sz
+                    ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <span>{sz}</span>
+                {priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(priceModifier)}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -124,24 +166,34 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
             3. الكمية
           </label>
-          <span className="text-xs text-amber-600 font-bold">
-            {quantity >= 1000 ? 'تم تطبيق خصم 25% للكميات الكبيرة!' : quantity >= 500 ? 'خصم 15% للكميات' : ''}
-          </span>
+          {matchingTier && (
+            <span className="text-xs text-amber-600 font-bold">
+              {formatCurrency(matchingTier.unitPrice)} للقطعة عند هذه الكمية
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {[100, 250, 500, 1000, 2500].map((q) => (
-            <button
-              key={q}
-              onClick={() => setQuantity(q)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black border transition-all ${
-                quantity === q
-                  ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-xs'
-                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              {q}
-            </button>
-          ))}
+          {quantityOptions.map((q) => {
+            const tier = product.configurableQuantityTiers?.find((item) => item.quantity === q);
+            return (
+              <button
+                key={q}
+                onClick={() => setQuantity(q)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black border transition-all ${
+                  quantity === q
+                    ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <span className="block">{q}</span>
+                {tier && (
+                  <span className="mt-1 block font-semibold">
+                    {formatCurrency(tier.unitPrice)} / قطعة
+                  </span>
+                )}
+              </button>
+            );
+          })}
           <input
             type="number"
             value={quantity}
@@ -157,22 +209,18 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           4. السلفنة واللمسات الخاصة
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { id: 'none', label: 'مطفي قياسي' },
-            { id: 'gloss', label: 'لامع UV' },
-            { id: 'velvet', label: 'مخملي ناعم' },
-            { id: 'foil', label: 'بصمة ذهبية معدنية' },
-          ].map((finish) => (
+          {finishOptions.map((finish) => (
             <button
               key={finish.id}
-              onClick={() => setLamination(finish.id as any)}
+              onClick={() => setLamination(finish.id)}
               className={`p-3 rounded-xl border text-xs font-bold text-center transition-all ${
                 lamination === finish.id
                   ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
                   : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
               }`}
             >
-              {finish.label}
+              <span>{finish.label}</span>
+              {finish.priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(finish.priceModifier)}</span>}
             </button>
           ))}
         </div>
@@ -274,7 +322,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       <div className="flex justify-between items-center border-b border-white/20 pb-2 mb-3 text-sm">
         <span>🎨 خدمة التصميم</span>
         <span className="font-bold">
-          {formatCurrency(75)}
+          {formatCurrency(product.designFee ?? 75)}
         </span>
       </div>
     )}

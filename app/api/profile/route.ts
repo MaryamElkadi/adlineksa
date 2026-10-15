@@ -86,7 +86,7 @@ export async function PATCH(request: Request) {
           ...(avatar !== undefined ? { avatar: avatar.trim() } : {}),
         },
       },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).select("-password -resetPasswordToken -resetPasswordExpires");
 
     if (!updatedUser) {

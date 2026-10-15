@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         scope: "orders.read_write products.read webhooks.read_write",
         tokenType: tokens.token_type || "Bearer",
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
     );
 
     settingsUrl.searchParams.set("salla", "connected");

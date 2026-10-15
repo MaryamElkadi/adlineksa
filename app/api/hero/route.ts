@@ -74,7 +74,7 @@ export async function PUT(request: Request) {
     if (!Array.isArray(body.items)) return NextResponse.json({ message: "Hero items are required" }, { status: 400 });
     await connectToDatabase();
     const items = body.items.map((item: any, index: number) => ({ itemType: item.itemType, itemId: item.itemId, sortOrder: Number(item.sortOrder ?? index), badge: item.badge || "", customTitle: item.customTitle || "", customTitleAr: item.customTitleAr || "" }));
-    const config = await HeroConfig.findOneAndUpdate({}, { items }, { upsert: true, new: true, runValidators: true });
+    const config = await HeroConfig.findOneAndUpdate({}, { items }, { upsert: true, returnDocument: "after", runValidators: true });
     return NextResponse.json(serializeDocument(config));
   } catch { return NextResponse.json({ message: "Could not save hero content" }, { status: 500 }); }
 }

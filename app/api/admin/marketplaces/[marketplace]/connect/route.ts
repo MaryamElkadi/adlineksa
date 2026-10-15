@@ -30,7 +30,7 @@ export async function POST(request: Request, context: RouteContext<'/api/admin/m
       status: 'connected',
       accountName: `Development ${mp.charAt(0).toUpperCase() + mp.slice(1)} Account`,
     };
-    const rec = await MarketplaceConnection.findOneAndUpdate({ marketplace: mp }, update, { upsert: true, new: true, setDefaultsOnInsert: true });
+    const rec = await MarketplaceConnection.findOneAndUpdate({ marketplace: mp }, update, { upsert: true, returnDocument: "after", setDefaultsOnInsert: true });
     return NextResponse.json(safeConnection(rec));
   } catch (err: any) {
     console.error(err);
