@@ -18,6 +18,27 @@ function matchesFileSignature(buffer: Buffer, mimeType: string) {
   return false;
 }
 
+function getUploadErrorDetails(error: unknown): { message: string; httpCode?: number } {
+  if (typeof error === "string") return { message: error };
+  if (!error || typeof error !== "object") return { message: "Unknown upload error." };
+
+  const response = error as {
+    message?: unknown;
+    http_code?: unknown;
+    error?: unknown;
+  };
+  const nestedError = response.error && typeof response.error === "object"
+    ? response.error as { message?: unknown; http_code?: unknown }
+    : undefined;
+  const message = nestedError?.message ?? response.message;
+  const httpCode = nestedError?.http_code ?? response.http_code;
+
+  return {
+    message: typeof message === "string" ? message : "Cloudinary returned an unrecognized error.",
+    ...(typeof httpCode === "number" ? { httpCode } : {}),
+  };
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (auth.response) return auth.response;
@@ -68,7 +89,10 @@ export async function POST(request: Request) {
       provider: kind === "video" ? "cloudinary" : undefined,
     }, { status: 201 });
   } catch (error) {
-    console.error("Media upload failed:", error);
-    return NextResponse.json({ message: "Media upload failed. Your saved media was not changed." }, { status: 500 });
+    const details = getUploadErrorDetails(error);
+    console.error("Media upload failed:", details);
+    return NextResponse.json({
+      message: `تعذر رفع الملف إلى Cloudinary: ${details.message.slice(0, 300)}${details.httpCode ? ` (HTTP ${details.httpCode})` : ""}`,
+    }, { status: 502 });
   }
 }

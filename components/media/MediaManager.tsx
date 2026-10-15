@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import type { ImageMedia, VideoMedia } from "@/types";
 import { isOptimizableImageUrl, parseExternalVideoUrl } from "@/lib/media";
@@ -12,6 +12,7 @@ interface MediaManagerProps {
   onCoverImageChange: (url: string) => void;
   onImagesChange: (images: ImageMedia[]) => void;
   onVideosChange: (videos: VideoMedia[]) => void;
+  onUploadStateChange?: (isUploading: boolean) => void;
 }
 
 function uploadFile(file: File, kind: "image" | "video", onProgress: (value: number) => void) {
@@ -54,8 +55,10 @@ function embedUrl(video: VideoMedia) {
   return "";
 }
 
-export function MediaManager({ images, videos, coverImage, onCoverImageChange, onImagesChange, onVideosChange }: MediaManagerProps) {
+export function MediaManager({ images, videos, coverImage, onCoverImageChange, onImagesChange, onVideosChange, onUploadStateChange }: MediaManagerProps) {
+  const uploadInProgress = useRef(false);
   const [progress, setProgress] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
@@ -63,27 +66,43 @@ export function MediaManager({ images, videos, coverImage, onCoverImageChange, o
   const [imageUrl, setImageUrl] = useState("");
 
   const uploadFiles = async (files: FileList | null, kind: "image" | "video") => {
-    if (!files?.length) return;
+    if (!files?.length || uploadInProgress.current) return;
+    const currentCount = kind === "image" ? images.length : videos.length;
+    const maxCount = kind === "image" ? 30 : 20;
+    if (currentCount + files.length > maxCount) {
+      setError(`الحد الأقصى هو ${maxCount} ${kind === "image" ? "صورة" : "فيديو"} للمنتج.`);
+      return;
+    }
+
+    uploadInProgress.current = true;
+    setIsUploading(true);
+    onUploadStateChange?.(true);
     setError("");
     const addedImages = [...images];
     const addedVideos = [...videos];
-    for (const file of Array.from(files)) {
-      try {
-        setProgress(`جارٍ رفع ${file.name} — 0%`);
-        const result = await uploadFile(file, kind, (value) => setProgress(`جارٍ رفع ${file.name} — ${value}%`));
-        if (kind === "image") {
-          addedImages.push({ url: result.url, publicId: result.publicId, alt: "", sortOrder: addedImages.length });
-          onImagesChange([...addedImages]);
-        } else {
-          addedVideos.push({ url: result.url, publicId: result.publicId, provider: "cloudinary", title: file.name.replace(/\.[^.]+$/, ""), sortOrder: addedVideos.length });
-          onVideosChange([...addedVideos]);
+    try {
+      for (const file of Array.from(files)) {
+        try {
+          setProgress(`جارٍ رفع ${file.name} — 0%`);
+          const result = await uploadFile(file, kind, (value) => setProgress(`جارٍ رفع ${file.name} — ${value}%`));
+          if (kind === "image") {
+            addedImages.push({ url: result.url, publicId: result.publicId, alt: "", sortOrder: addedImages.length });
+            onImagesChange([...addedImages]);
+          } else {
+            addedVideos.push({ url: result.url, publicId: result.publicId, provider: "cloudinary", title: file.name.replace(/\.[^.]+$/, ""), sortOrder: addedVideos.length });
+            onVideosChange([...addedVideos]);
+          }
+        } catch (uploadError) {
+          setError(uploadError instanceof Error ? `${file.name}: ${uploadError.message}` : `تعذر رفع ${file.name}`);
+          break;
         }
-      } catch (uploadError) {
-        setError(uploadError instanceof Error ? uploadError.message : `تعذر رفع ${file.name}`);
-        break;
       }
+    } finally {
+      uploadInProgress.current = false;
+      setIsUploading(false);
+      onUploadStateChange?.(false);
+      setProgress("");
     }
-    setProgress("");
   };
 
   const addImageUrl = () => {
@@ -121,6 +140,7 @@ export function MediaManager({ images, videos, coverImage, onCoverImageChange, o
 
   return (
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4" aria-label="Media gallery">
+      <fieldset disabled={isUploading} className="min-w-0 space-y-4 disabled:opacity-70">
       <div>
         <h2 className="text-sm font-black text-slate-800">الصور والفيديوهات</h2>
         <p className="mt-1 text-xs text-slate-500">الصور حتى 10MB؛ الفيديو MP4/WebM (الحد حسب إعداد الخادم).</p>
@@ -128,12 +148,12 @@ export function MediaManager({ images, videos, coverImage, onCoverImageChange, o
 
       <div className="flex flex-wrap gap-3">
         <label className="cursor-pointer rounded-xl bg-amber-100 px-4 py-2 text-xs font-bold text-amber-900 hover:bg-amber-200">
-          رفع الصور
-          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { void uploadFiles(event.target.files, "image"); event.target.value = ""; }} />
+          {isUploading ? "جارٍ الرفع..." : `رفع الصور (${images.length}/30)`}
+          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={isUploading} onChange={(event) => { void uploadFiles(event.target.files, "image"); event.target.value = ""; }} />
         </label>
         <label className="cursor-pointer rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700">
-          رفع الفيديوهات
-          <input className="sr-only" type="file" accept="video/mp4,video/webm" multiple onChange={(event) => { void uploadFiles(event.target.files, "video"); event.target.value = ""; }} />
+          {isUploading ? "جارٍ الرفع..." : `رفع الفيديوهات (${videos.length}/20)`}
+          <input className="sr-only" type="file" accept="video/mp4,video/webm" multiple disabled={isUploading} onChange={(event) => { void uploadFiles(event.target.files, "video"); event.target.value = ""; }} />
         </label>
       </div>
       {progress && <p role="status" className="text-xs font-bold text-amber-700">{progress}</p>}
@@ -197,6 +217,7 @@ export function MediaManager({ images, videos, coverImage, onCoverImageChange, o
         <input value={videoPoster} onChange={(event) => setVideoPoster(event.target.value)} placeholder="رابط صورة الملصق (اختياري)" className="rounded-xl border border-slate-200 p-2 text-xs" />
         <button type="button" onClick={addVideoUrl} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold">إضافة فيديو بالرابط</button>
       </div>
+      </fieldset>
     </section>
   );
 }

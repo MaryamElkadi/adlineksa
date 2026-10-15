@@ -89,6 +89,7 @@ export default function AdminProductsPage() {
   const [error, setError] = useState('');
   const [skuError, setSkuError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMediaUploading, setIsMediaUploading] = useState(false);
   const [formData, setFormData] = useState<ProductFormState>(initialFormState);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -585,6 +586,7 @@ export default function AdminProductsPage() {
               }))}
               onVideosChange={(videos) => setFormData((current) => ({ ...current, videos }))}
               onCoverImageChange={(coverImage) => setFormData((current) => ({ ...current, coverImage }))}
+              onUploadStateChange={setIsMediaUploading}
             />
 
             {/* SKU Field */}
@@ -905,11 +907,13 @@ export default function AdminProductsPage() {
             <Button
               type="submit"
               variant="yellow"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isMediaUploading}
               className={`text-slate-900 font-black px-6 py-2.5 text-xs rounded-2xl transition-all ${isSubmitting ? 'bg-amber-200 cursor-not-allowed opacity-70' : 'bg-amber-400 hover:bg-amber-300'}`}
             >
               {isSubmitting
                 ? (editingId ? 'جاري حفظ التعديلات...' : 'جاري إنشاء المنتج...')
+                : isMediaUploading
+                  ? 'انتظر حتى يكتمل رفع الوسائط...'
                 : (editingId ? 'حفظ التعديلات ✨' : 'حفظ المنتج ✨')}
             </Button>
           </div>
