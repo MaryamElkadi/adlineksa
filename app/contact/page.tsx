@@ -49,7 +49,7 @@ export default function ContactPage() {
 
             <div className="p-3.5 bg-white/80 rounded-2xl border border-indigo-100 shadow-2xs">
               <span className="text-indigo-600 font-black block text-sm mb-1">✉️ البريد الإلكتروني للدعم:</span>
-              <span className="text-slate-600">support@adlineksa.com</span>
+              <span className="text-slate-600">info@adlineksa.com</span>
             </div>
           </div>
         </div>

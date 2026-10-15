@@ -112,7 +112,7 @@ export const Footer: React.FC = () => {
                   💬 واتساب: +966 54 936 2553
                 </a>
               </p>
-              <p>✉️ البريد الإلكتروني: support@adlineksa.com</p>
+              <p>✉️ البريد الإلكتروني: sales@adlineksa.com</p>
               <p>🕒 أوقات العمل: الأحد - الخميس (8:00 صباحاً - 6:00 مساءً)</p>
             </div>
             <div className="mt-5 max-w-52.5">
