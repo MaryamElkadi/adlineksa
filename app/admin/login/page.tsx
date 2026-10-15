@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/Button';
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState('admin@adlineksa.com');
-  const [password, setPassword] = useState('Adline@2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
         localStorage.setItem('adline_admin_authenticated', 'true');
         router.push('/admin');
       } else {
-        setError(data.message || 'بيانات الدخول غير صحيحة. استخدم admin@adlineksa.com / Adline@2026');
+        setError(data.message || 'بيانات الدخول غير صحيحة.');
       }
     } catch {
       setError('حدث خطأ أثناء الاتصال بالخادم.');
@@ -48,19 +48,6 @@ export default function AdminLoginPage() {
           <p className="text-xs text-slate-500 font-medium">
             Adline KSA Redesign - Enterprise Admin Panel
           </p>
-        </div>
-
-        {/* Demo Credentials Alert Banner */}
-        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 text-xs space-y-1">
-          <div className="font-extrabold text-amber-900 flex items-center gap-1.5">
-            🔑 Admin Access Credentials:
-          </div>
-          <div className="text-slate-700 font-mono">
-            <strong>Username:</strong> admin@adlineksa.com
-          </div>
-          <div className="text-slate-700 font-mono">
-            <strong>Password:</strong> Adline@2026
-          </div>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">

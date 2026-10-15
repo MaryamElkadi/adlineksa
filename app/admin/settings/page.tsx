@@ -20,31 +20,6 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      {/* Credentials Banner (Cheerful Light Theme) */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-amber-100/40 to-amber-50/20 border border-amber-200/80 rounded-3xl p-6 shadow-sm space-y-3">
-        <span className="text-xs font-black text-amber-800 uppercase tracking-wider block flex items-center gap-1.5">
-          <span>🔐</span> بيانات تسجيل دخول المسؤول (Admin Credentials)
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-          <div className="bg-white/80 border border-amber-200/70 p-3.5 rounded-2xl shadow-2xs">
-            <span className="text-slate-500 block text-[10px] uppercase font-sans font-bold mb-1">
-              اسم المستخدم / البريد الإلكتروني:
-            </span>
-            <span className="font-black text-slate-800 text-sm dir-ltr text-right block">
-              admin@adlineksa.com
-            </span>
-          </div>
-          <div className="bg-white/80 border border-amber-200/70 p-3.5 rounded-2xl shadow-2xs">
-            <span className="text-slate-500 block text-[10px] uppercase font-sans font-bold mb-1">
-              كلمة المرور:
-            </span>
-            <span className="font-black text-amber-700 text-sm dir-ltr text-right block">
-              Adline@2026
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Settings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <CommunicationSettings />
