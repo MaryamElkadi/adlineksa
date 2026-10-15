@@ -19,7 +19,7 @@ export const Footer: React.FC = () => {
         </div>
         <div>
           <h3 className="font-semibold mb-2">معلومات التواصل</h3>
-          <p className="text-sm">الهاتف: 5678 1234 966+</p>
+          <p className="text-sm">الهاتف: <a href="tel:+966549362553" dir="ltr">+966 54 936 2553</a></p>
           <p className="text-sm">البريد الإلكتروني: info@adlineksa.com</p>
         </div>
       </div>

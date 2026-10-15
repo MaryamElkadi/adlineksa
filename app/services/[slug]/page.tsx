@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { connectToDatabase } from "@/lib/mongodb";
 import Service from "@/models/Service";
 import Product from "@/models/Product";
@@ -9,6 +8,7 @@ import { serializeDocument } from "@/lib/serializers";
 import { ServiceCard } from "@/components/cards/ServiceCard";
 import { ProductCard } from "@/components/cards/ProductCard";
 import { formatCurrency } from "@/lib/utils";
+import { MediaGallery } from "@/components/media/MediaGallery";
 
 async function getService(slug: string) {
   await connectToDatabase();
@@ -61,17 +61,13 @@ export default async function ServiceDetails({
       className="mx-auto max-w-7xl space-y-16 px-4 py-10 sm:px-6 lg:px-8"
     >
       <section className="grid gap-8 lg:grid-cols-2 lg:items-center">
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-lg">
-          <Image
-            src={service.image || "/products/printing.png"}
-            alt={service.titleAr || service.title}
-            width={1200}
-            height={900}
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="aspect-[4/3] h-full w-full object-cover"
-          />
-        </div>
+        <MediaGallery
+          images={service.images?.length
+            ? [...service.images].sort((a, b) => Number(b.url === service.coverImage) - Number(a.url === service.coverImage))
+            : [...new Set([service.coverImage || service.image, ...(service.gallery || [])].filter((image): image is string => Boolean(image)))]}
+          videos={service.videos || []}
+          alt={service.titleAr || service.title}
+        />
         <div>
           <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
             {service.category}

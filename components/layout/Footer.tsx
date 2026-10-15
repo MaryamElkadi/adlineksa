@@ -101,15 +101,15 @@ export const Footer: React.FC = () => {
               خط الدعم المباشر
             </h4>
             <div className="space-y-2.5 text-xs font-medium">
-              <p>📞 الهاتف: 12345 9200 966+</p>
+              <p>📞 الهاتف: <a href="tel:+966549362553" dir="ltr">+966 54 936 2553</a></p>
               <p>
                 <a
-                  href={`https://wa.me/${(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '966503502717').replace(/\D/g, '')}?text=${encodeURIComponent('مرحباً، أريد الاستفسار عن خدمات خط الإعلان.')}`}
+                  href={`https://wa.me/${(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '966549362553').replace(/\D/g, '')}?text=${encodeURIComponent('مرحباً، أريد الاستفسار عن خدمات خط الإعلان.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition-colors hover:text-emerald-600"
                 >
-                  💬 واتساب: 4567 123 50 966+
+                  💬 واتساب: +966 54 936 2553
                 </a>
               </p>
               <p>✉️ البريد الإلكتروني: support@adlineksa.com</p>

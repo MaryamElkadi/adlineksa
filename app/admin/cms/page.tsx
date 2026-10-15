@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/forms/Input';
 
 export default function AdminCMSPage() {
-  const [heroTitle, setHeroTitle] = useState('نعيد تعريف الطباعة المخصصة بأسعار فورية ودقيقة.');
+  const [heroTitle, setHeroTitle] = useState('نعيد تعريف الطباعة المخصصة بأسعار مناسبة ودقيقة.');
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {

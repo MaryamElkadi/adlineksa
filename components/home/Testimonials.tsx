@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { TESTIMONIALS } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 
@@ -28,11 +29,16 @@ export const Testimonials: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                <img
-                  src={rev.avatar}
-                  alt={rev.author}
-                  className="w-10 h-10 rounded-full object-cover border border-amber-400"
-                />
+                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-amber-400 shrink-0">
+                  <Image
+                    src={rev.avatar}
+                    alt={rev.author}
+                    fill
+                    loading="lazy"
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                </div>
                 <div>
                   <h4 className="text-xs font-bold text-brand-blue">{rev.author}</h4>
                   {rev.verifiedPurchase && (

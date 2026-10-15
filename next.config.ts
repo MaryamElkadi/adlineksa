@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   // Allow remote development hosts (e.g., your LAN IP)
   allowedDevOrigins: ["192.168.1.7"],
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
@@ -17,7 +18,6 @@ const nextConfig: NextConfig = {
     ],
     qualities: [72, 75],
   },
-  // You can add other Next.js options here
 };
 
 export default nextConfig;

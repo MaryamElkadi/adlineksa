@@ -39,12 +39,12 @@ export default function ContactPage() {
 
             <div className="p-3.5 bg-white/80 rounded-2xl border border-sky-100 shadow-2xs">
               <span className="text-sky-600 font-black block text-sm mb-1">📞 الرقم الموحد:</span>
-              <span dir="ltr" className="inline-block text-slate-600">12345 9200 966+ / +966 11 456 7890</span>
+              <a href="tel:+966549362553" dir="ltr" className="inline-block text-slate-600">+966 54 936 2553</a>
             </div>
 
             <div className="p-3.5 bg-white/80 rounded-2xl border border-emerald-100 shadow-2xs">
               <span className="text-emerald-600 font-black block text-sm mb-1">💬 مبيعات الواتساب:</span>
-              <span dir="ltr" className="inline-block text-slate-600">4567 123 50 966+</span>
+              <a href="https://wa.me/966549362553" target="_blank" rel="noopener noreferrer" dir="ltr" className="inline-block text-slate-600">+966 54 936 2553</a>
             </div>
 
             <div className="p-3.5 bg-white/80 rounded-2xl border border-indigo-100 shadow-2xs">

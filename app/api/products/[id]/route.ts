@@ -4,6 +4,8 @@ import { serializeDocument } from "@/lib/serializers";
 import Product from "@/models/Product";
 import mongoose from "mongoose";
 import { normalizeSku, isSkuDuplicateError } from "@/lib/skuGenerator";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { prepareMediaBody } from "@/lib/media";
 
 export async function GET(
   _request: Request,
@@ -73,12 +75,17 @@ export async function PATCH(
   request: Request,
   context: RouteContext<"/api/products/[id]">
 ) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     const { id } = await context.params;
 
     await connectToDatabase();
 
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
+    if (!prepareMediaBody(body)) {
+      return NextResponse.json({ message: "Product media is invalid. Use HTTPS image URLs and supported video providers." }, { status: 400 });
+    }
 
     // Validate SKU uniqueness (excludes current product)
     const skuError = await validateSkuForUpdate(id, body);
@@ -119,10 +126,15 @@ export async function PATCH(
 
 // PUT handler – works like PATCH but supports full replacement semantics
 export async function PUT(request: Request, context: RouteContext<"/api/products/[id]">) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     const { id } = await context.params;
     await connectToDatabase();
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
+    if (!prepareMediaBody(body)) {
+      return NextResponse.json({ message: "Product media is invalid. Use HTTPS image URLs and supported video providers." }, { status: 400 });
+    }
 
     // Validate SKU uniqueness (excludes current product)
     const skuError = await validateSkuForUpdate(id, body);
@@ -157,6 +169,8 @@ export async function DELETE(
   _request: Request,
   context: RouteContext<"/api/products/[id]">
 ) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     const { id } = await context.params;
 

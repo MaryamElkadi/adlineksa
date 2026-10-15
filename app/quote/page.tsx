@@ -120,9 +120,9 @@ export default function QuotationPage() {
                 📞 استفسار مباشر؟
               </span>
               <span className="text-slate-600 block mb-1">تواصل مع قسم المشتريات:</span>
-              <span dir="ltr" className="inline-block font-bold text-indigo-700 text-sm">
-                +966 50 123 4567
-              </span>
+              <a href="tel:+966549362553" dir="ltr" className="inline-block font-bold text-indigo-700 text-sm">
+                +966 54 936 2553
+              </a>
             </div>
           </div>
         </div>

@@ -51,7 +51,21 @@ export interface QuantityTier {
   unitPrice: number;  // e.g. 5.50 EGP per unit
 }
 
+export interface ImageMedia {
+  url: string;
+  publicId?: string;
+  alt?: string;
+  sortOrder: number;
+}
 
+export interface VideoMedia {
+  url: string;
+  publicId?: string;
+  thumbnailUrl?: string;
+  provider: "cloudinary" | "youtube" | "vimeo";
+  title?: string;
+  sortOrder: number;
+}
 
 export interface Product {
   // Basic Information
@@ -75,6 +89,9 @@ export interface Product {
   // Images
   image: string;
   gallery: string[];
+  images?: ImageMedia[];
+  videos?: VideoMedia[];
+  coverImage?: string;
 
   // Pricing
   basePrice: number;
@@ -128,6 +145,10 @@ export interface Service {
   shortDescription?: string;
   shortDescriptionAr?: string;
   image?: string;
+  gallery?: string[];
+  images?: ImageMedia[];
+  videos?: VideoMedia[];
+  coverImage?: string;
   icon?: string;
   category: string;
   price?: number;
@@ -144,7 +165,7 @@ export interface Service {
 
 export interface Exhibition {
   id: string; title: string; titleAr: string; slug: string; description: string; descriptionAr: string; shortDescription?: string; shortDescriptionAr?: string;
-  image: string; gallery: string[]; category: string; categoryAr?: string; location?: string; locationAr?: string; date?: string; endDate?: string; price?: number; priceLabel?: string;
+  image: string; gallery: string[]; images?: ImageMedia[]; videos?: VideoMedia[]; coverImage?: string; category: string; categoryAr?: string; location?: string; locationAr?: string; date?: string; endDate?: string; price?: number; priceLabel?: string;
   features?: string[]; featuresAr?: string[]; services?: string[]; servicesAr?: string[]; relatedServiceIds?: string[]; relatedProductIds?: string[];
   featured?: boolean; showOnHomepage?: boolean; active?: boolean; sortOrder?: number; createdAt?: string; updatedAt?: string;
 }

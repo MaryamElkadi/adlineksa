@@ -35,21 +35,54 @@ async function request<T>(
     ? (undefined as T)
     : response.json();
 }
+let cachedCategoriesPromise: Promise<Category[]> | null = null;
 
 export const api = {
-  // Categories
-  getCategories: () =>
-    request<Category[]>("/api/categories"),
+  // Categories (cached in-memory to prevent duplicate requests across components)
+  getCategories: () => {
+    if (!cachedCategoriesPromise) {
+      cachedCategoriesPromise = request<Category[]>("/api/categories").catch((err) => {
+        cachedCategoriesPromise = null;
+        throw err;
+      });
+    }
+    return cachedCategoriesPromise;
+  },
 
-  // Products
-  getProducts: (categorySlug?: string) =>
-    request<Product[]>(
-      `/api/products${
-        categorySlug
-          ? `?category=${encodeURIComponent(categorySlug)}`
-          : ""
-      }`
-    ),
+  // Clear categories cache if needed
+  invalidateCategoriesCache: () => {
+    cachedCategoriesPromise = null;
+  },
+
+  // Products with optional server-side filtering, compact projection, and pagination
+  getProducts: (
+    params?:
+      | string
+      | {
+          category?: string;
+          search?: string;
+          page?: number;
+          limit?: number;
+          compact?: boolean;
+          format?: string;
+        }
+  ) => {
+    let url = "/api/products";
+    if (typeof params === "string") {
+      url += `?category=${encodeURIComponent(params)}`;
+    } else if (params) {
+      const searchParams = new URLSearchParams();
+      if (params.category) searchParams.set("category", params.category);
+      if (params.search) searchParams.set("search", params.search);
+      if (params.page) searchParams.set("page", params.page.toString());
+      if (params.limit) searchParams.set("limit", params.limit.toString());
+      if (params.compact !== undefined) searchParams.set("compact", params.compact ? "true" : "false");
+      if (params.format) searchParams.set("format", params.format);
+      const queryStr = searchParams.toString();
+      if (queryStr) url += `?${queryStr}`;
+    }
+    return request<any>(url);
+  },
 
   getProduct: (id: string) =>
     request<Product>(`/api/products/${id}`),

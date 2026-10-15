@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { serializeDocument } from "@/lib/serializers";
 import Service from "@/models/Service";
+import { prepareMediaBody } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
     const hasPagination = searchParams.has("page");
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || (admin ? 20 : 6)));
-    const cardFields = "title titleAr slug shortDescription shortDescriptionAr image icon category price priceLabel featured";
+    const cardFields = "title titleAr slug shortDescription shortDescriptionAr image coverImage icon category price priceLabel featured";
     const services = await Service.find(query)
       .select(admin ? '' : cardFields)
       .sort({ sortOrder: 1, createdAt: -1 })
@@ -34,7 +35,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireAdmin(); if (auth.response) return auth.response;
   try {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
+    if (!prepareMediaBody(body)) return NextResponse.json({ message: "Service media is invalid. Use HTTPS image URLs and supported video providers." }, { status: 400 });
     if (!body.titleAr || !body.descriptionAr || !body.slug || !body.category) return NextResponse.json({ message: "Arabic name, Arabic description, slug and category are required." }, { status: 400 });
     await connectToDatabase();
     const service = await Service.create(body);

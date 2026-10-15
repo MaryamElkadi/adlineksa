@@ -16,7 +16,8 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
           alt={category.nameAr || category.name}
           fill
           loading="lazy"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
+          quality={75}
           className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent flex flex-col justify-end p-5">

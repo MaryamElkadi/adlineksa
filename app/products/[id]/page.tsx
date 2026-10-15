@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Product } from '@/types';
 import { api } from '@/services/api';
-import { ProductGallery } from '@/components/product/ProductGallery';
+import { MediaGallery } from '@/components/media/MediaGallery';
 import { SmartConfigurator } from '@/components/product/SmartConfigurator';
 import { ProductCard } from '@/components/cards/ProductCard';
 
@@ -33,11 +33,19 @@ export default function ProductDetailPage() {
 
         setProduct(currentProduct);
 
-        // Get related products
-        const products = await api.getProducts(currentProduct.categorySlug);
+        // Get related products (limited to 5 compact items instead of entire catalog)
+        const relatedRes: any = await api.getProducts({
+          category: currentProduct.categorySlug,
+          limit: 5,
+          compact: true,
+        });
+
+        const relatedList: Product[] = Array.isArray(relatedRes)
+          ? relatedRes
+          : relatedRes?.products || [];
 
         setRelatedProducts(
-          products.filter((p) => p.id !== currentProduct.id)
+          relatedList.filter((p) => p.id !== currentProduct.id).slice(0, 4)
         );
       } catch (error) {
         console.error('ERROR:', error);
@@ -80,13 +88,12 @@ export default function ProductDetailPage() {
       {/* Product */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
         <div className="space-y-6">
-          <ProductGallery
+          <MediaGallery
             key={`gallery-${product.id}`}
-            images={
-              product.gallery?.length
-                ? product.gallery
-                : [product.image]
-            }
+            images={product.images?.length
+              ? [...product.images].sort((a, b) => Number(b.url === product.coverImage) - Number(a.url === product.coverImage))
+              : [...new Set([product.coverImage || product.image, ...(product.gallery || [])].filter(Boolean))]}
+            videos={product.videos || []}
             alt={product.nameAr || product.name}
           />
 

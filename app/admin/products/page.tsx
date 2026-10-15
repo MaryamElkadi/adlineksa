@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Category, Product, ConfigOption, QuantityTier } from '@/types';
+import { Category, Product, ConfigOption, QuantityTier, ImageMedia, VideoMedia } from '@/types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/forms/Input';
 import { Modal } from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
 import Swal from 'sweetalert2';
+import { MediaManager } from '@/components/media/MediaManager';
 
 const defaultImage = 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=600&q=80';
 
@@ -17,7 +18,9 @@ interface ProductFormState extends Partial<Product> {
   sizesList: ConfigOption[];
   finishesList: ConfigOption[];
   quantitiesList: QuantityTier[];
-  imageMode: 'upload' | 'url';
+  images: ImageMedia[];
+  videos: VideoMedia[];
+  coverImage: string;
 }
 
 const initialFormState: ProductFormState = {
@@ -36,8 +39,10 @@ const initialFormState: ProductFormState = {
   brand: '',
   sku: '',
   image: '',
-  imageMode: 'upload',
   gallery: [],
+  images: [],
+  videos: [],
+  coverImage: '',
   badge: '',
   featured: false,
   bestseller: false,
@@ -116,7 +121,12 @@ export default function AdminProductsPage() {
     setEditingId(product.id);
     setFormData({
       ...product,
-      imageMode: product.image?.startsWith('data:') ? 'upload' : 'url',
+      images: product.images?.length
+        ? product.images
+        : [...new Set([product.coverImage || product.image, ...(product.gallery || [])].filter(Boolean))]
+            .map((url, sortOrder) => ({ url, sortOrder, alt: '' })),
+      videos: product.videos || [],
+      coverImage: product.coverImage || product.image || product.gallery?.[0] || '',
       materialsList: product.configurableMaterials?.length
         ? product.configurableMaterials
         : (product.materials || []).map((m) => ({ label: m, priceModifier: 0 })),
@@ -129,21 +139,6 @@ export default function AdminProductsPage() {
         : (product.quantityTiers || []).map((q) => ({ quantity: q, unitPrice: product.basePrice || 0 })),
     });
     setIsModalOpen(true);
-  };
-
-  // Image Upload File Handler
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          image: reader.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   // Option Handlers
@@ -217,7 +212,11 @@ export default function AdminProductsPage() {
       .sort((a, b) => a.quantity - b.quantity);
 
     // Fallback to default placeholder image if left empty
-    const finalImage = formData.image?.trim() || defaultImage;
+    const selectedCover = formData.images.find((image) => image.url === formData.coverImage)?.url;
+    const finalImage = selectedCover || formData.images[0]?.url || defaultImage;
+    const finalImages = formData.images.length
+      ? formData.images
+      : [{ url: finalImage, alt: '', sortOrder: 0 }];
 
     // SKU: send trimmed value or empty string (backend will auto-generate)
     const skuValue = formData.sku?.trim() || '';
@@ -227,7 +226,10 @@ export default function AdminProductsPage() {
       slug: autoSlug,
       sku: skuValue,
       image: finalImage,
-      gallery: formData.gallery?.length ? formData.gallery : [finalImage],
+      coverImage: finalImage,
+      images: finalImages.map((image, sortOrder) => ({ ...image, sortOrder })),
+      videos: formData.videos || [],
+      gallery: finalImages.filter((image) => image.url !== finalImage).map((image) => image.url),
       basePrice: Number(formData.basePrice) || 0,
       salePrice: formData.salePrice ? Number(formData.salePrice) : undefined,
       discount: formData.discount ? Number(formData.discount) : 0,
@@ -547,71 +549,18 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
-            {/* Flexible Image Section (Upload or URL - Optional) */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="block text-[11px] font-black text-slate-700">
-                  🖼️ صورة المنتج (اختياري - Optional)
-                </label>
-                {/* Toggle Buttons */}
-                <div className="flex bg-slate-100 p-0.5 rounded-xl text-[10px] font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, imageMode: 'upload' })}
-                    className={`px-2.5 py-1 rounded-lg transition-all ${
-                      formData.imageMode === 'upload' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-500'
-                    }`}
-                  >
-                    رفع صورة 📁
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, imageMode: 'url' })}
-                    className={`px-2.5 py-1 rounded-lg transition-all ${
-                      formData.imageMode === 'url' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-500'
-                    }`}
-                  >
-                    رابط URL 🔗
-                  </button>
-                </div>
-              </div>
-
-              {formData.imageMode === 'upload' ? (
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileUpload}
-                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer"
-                  />
-                </div>
-              ) : (
-                <Input
-                  value={formData.image || ''}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
-              )}
-
-              {/* Image Preview */}
-              {formData.image && (
-                <div className="flex items-center gap-3 pt-1">
-                  <img
-                    src={formData.image}
-                    alt="معاينة الصورة"
-                    className="w-12 h-12 rounded-xl object-cover border border-amber-300"
-                  />
-                  <span className="text-[10px] font-bold text-slate-500">معاينة الصورة الحالية</span>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, image: '' })}
-                    className="text-[10px] font-bold text-rose-500 hover:underline mr-auto"
-                  >
-                    حذف الصورة
-                  </button>
-                </div>
-              )}
-            </div>
+            <MediaManager
+              images={formData.images}
+              videos={formData.videos}
+              coverImage={formData.coverImage}
+              onImagesChange={(images) => setFormData((current) => ({
+                ...current,
+                images,
+                coverImage: images.some((image) => image.url === current.coverImage) ? current.coverImage : images[0]?.url || '',
+              }))}
+              onVideosChange={(videos) => setFormData((current) => ({ ...current, videos }))}
+              onCoverImageChange={(coverImage) => setFormData((current) => ({ ...current, coverImage }))}
+            />
 
             {/* SKU Field */}
             <div className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2">

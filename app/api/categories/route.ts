@@ -10,12 +10,38 @@ export async function GET() {
     await connectToDatabase();
     await ensureInitialCatalog();
     const categories = await Category.aggregate([
+      { $match: { active: { $ne: false } } },
       { $sort: { sortOrder: 1, name: 1 } },
-      { $lookup: { from: "products", localField: "slug", foreignField: "categorySlug", as: "products" } },
-      { $addFields: { itemCount: { $size: "$products" } } },
-      { $project: { products: 0 } },
+      {
+        $lookup: {
+          from: "products",
+          let: { catSlug: "$slug" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$categorySlug", "$$catSlug"] }, active: { $ne: false } } },
+            { $project: { _id: 1 } },
+          ],
+          as: "products",
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          nameAr: 1,
+          slug: 1,
+          image: 1,
+          sortOrder: 1,
+          active: 1,
+          itemCount: { $size: "$products" },
+        },
+      },
     ]);
-    return NextResponse.json(categories.map((category) => ({ ...category, id: category._id.toString(), _id: undefined })));
+    return NextResponse.json(
+      categories.map((category) => ({
+        ...category,
+        id: category._id.toString(),
+        _id: undefined,
+      }))
+    );
   } catch (error) {
     console.error("Could not load categories", error);
     return NextResponse.json({ message: "Could not load categories" }, { status: 500 });

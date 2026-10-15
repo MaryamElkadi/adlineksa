@@ -4,6 +4,8 @@ import { serializeDocument } from "@/lib/serializers";
 import Product from "@/models/Product";
 import { ensureInitialCatalog } from "@/lib/seed";
 import { generateUniqueSku, normalizeSku, isSkuDuplicateError } from "@/lib/skuGenerator";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { prepareMediaBody } from "@/lib/media";
 
 const MAX_CREATION_RETRIES = 3;
 
@@ -11,15 +13,95 @@ export async function GET(request: Request) {
   try {
     await connectToDatabase();
     await ensureInitialCatalog();
-    const category = new URL(request.url).searchParams.get("category");
-    const products = await Product.find({ ...(category ? { categorySlug: category } : {}), active: { $ne: false } }).sort({ createdAt: -1 });
+
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    const compactParam = searchParams.get("compact");
+    const format = searchParams.get("format");
+
+    const query: Record<string, any> = { active: { $ne: false } };
+
+    if (category) {
+      query.categorySlug = category;
+    }
+
+    if (search && search.trim()) {
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i");
+      query.$or = [
+        { name: regex },
+        { nameAr: regex },
+        { categorySlug: regex },
+        { description: regex },
+      ];
+    }
+
+    const isPaginated = Boolean(limitParam || pageParam || format === "paginated");
+    const isCompact = compactParam === "true" || (isPaginated && compactParam !== "false");
+
+    let queryBuilder = Product.find(query).sort({ createdAt: -1 });
+
+    // Use projection for card listings to avoid returning huge documents
+    if (isCompact) {
+      queryBuilder = queryBuilder.select(
+        "name nameAr slug categorySlug description image coverImage basePrice rating reviewCount badge featured bestseller newArrival active updatedAt"
+      );
+    }
+
+    queryBuilder = queryBuilder.lean();
+
+    if (isPaginated) {
+      const page = Math.max(1, parseInt(pageParam || "1", 10));
+      const limit = Math.max(1, Math.min(100, parseInt(limitParam || "12", 10)));
+      const skip = (page - 1) * limit;
+
+      const [total, items] = await Promise.all([
+        Product.countDocuments(query),
+        queryBuilder.skip(skip).limit(limit),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+      const hasMore = page < totalPages;
+
+      if (format === "paginated") {
+        return NextResponse.json({
+          products: items.map(serializeDocument),
+          total,
+          page,
+          totalPages,
+          hasMore,
+        });
+      }
+
+      return NextResponse.json(items.map(serializeDocument), {
+        headers: {
+          "x-total-count": total.toString(),
+          "x-page": page.toString(),
+          "x-total-pages": totalPages.toString(),
+          "x-has-more": hasMore.toString(),
+        },
+      });
+    }
+
+    const products = await queryBuilder;
     return NextResponse.json(products.map(serializeDocument));
-  } catch { return NextResponse.json({ message: "Could not load products" }, { status: 500 }); }
+  } catch (error) {
+    console.error("Could not load products", error);
+    return NextResponse.json({ message: "Could not load products" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
+    if (!prepareMediaBody(body)) {
+      return NextResponse.json({ message: "Product media is invalid. Use HTTPS image URLs and supported video providers." }, { status: 400 });
+    }
 
     if (!body.name || !body.slug || !body.categorySlug || body.basePrice === undefined) {
       return NextResponse.json(
@@ -36,7 +118,7 @@ export async function POST(request: Request) {
     // If SKU is empty/missing, generate a unique one automatically.
     let manualSku = false;
 
-    if (body.sku && body.sku.trim() !== '') {
+    if (typeof body.sku === "string" && body.sku.trim() !== '') {
       body.sku = normalizeSku(body.sku);
       manualSku = true;
 

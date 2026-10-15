@@ -1,5 +1,5 @@
 export const DEFAULT_SITE_SETTINGS = {
-  whatsappNumber: (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "966503502717").replace(/\D/g, ""),
+  whatsappNumber: (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "966549362553").replace(/\D/g, ""),
   whatsappMessage: "مرحباً، أريد الاستفسار عن خدمات خط الإعلان.",
   chatbotEnabled: true,
   chatbotWelcomeMessage: "مرحباً بك في خط الإعلان. كيف يمكنني مساعدتك اليوم؟",

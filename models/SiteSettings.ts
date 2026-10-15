@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 const SiteSettingsSchema = new Schema(
   {
     key: { type: String, unique: true, default: "default" },
-    whatsappNumber: { type: String, default: "966503502717", trim: true },
+    whatsappNumber: { type: String, default: "966549362553", trim: true },
     whatsappMessage: {
       type: String,
       default: "مرحباً، أريد الاستفسار عن خدمات خط الإعلان.",

@@ -5,6 +5,7 @@ import { Product } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
+import { isOptimizableImageUrl } from '@/lib/media';
 
 interface ProductCardProps {
   product: Product;
@@ -19,11 +20,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
           <Image
-            src={product.image || '/products/printing.png'}
+            src={product.coverImage || product.image || '/products/printing.png'}
             alt={product.nameAr || product.name}
             fill
             loading="lazy"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+            quality={75}
+            unoptimized={!isOptimizableImageUrl(product.coverImage || product.image || '/products/printing.png')}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           {product.badge && (

@@ -1,11 +1,30 @@
 import { Schema, model, models } from "mongoose";
 
+const ImageMediaSchema = new Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, default: "" },
+  alt: { type: String, default: "" },
+  sortOrder: { type: Number, default: 0 },
+}, { _id: false });
+
+const VideoMediaSchema = new Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, default: "" },
+  thumbnailUrl: { type: String, default: "" },
+  provider: { type: String, enum: ["cloudinary", "youtube", "vimeo"], required: true },
+  title: { type: String, default: "" },
+  sortOrder: { type: Number, default: 0 },
+}, { _id: false });
+
 const ExhibitionSchema = new Schema({
   title: { type: String, default: "", trim: true }, titleAr: { type: String, required: true, trim: true },
   slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
   description: { type: String, default: "" }, descriptionAr: { type: String, required: true },
   shortDescription: { type: String, default: "" }, shortDescriptionAr: { type: String, default: "" },
   image: { type: String, required: true }, gallery: { type: [String], default: [] },
+  images: { type: [ImageMediaSchema], default: [] },
+  videos: { type: [VideoMediaSchema], default: [] },
+  coverImage: { type: String, default: "" },
   category: { type: String, required: true }, categoryAr: { type: String, default: "" },
   location: { type: String, default: "" }, locationAr: { type: String, default: "" },
   date: { type: Date }, endDate: { type: Date }, price: { type: Number, min: 0 }, priceLabel: { type: String, default: "" },

@@ -1,5 +1,21 @@
 import { Schema, model, models } from "mongoose";
 
+const ImageMediaSchema = new Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, default: "" },
+  alt: { type: String, default: "" },
+  sortOrder: { type: Number, default: 0 },
+}, { _id: false });
+
+const VideoMediaSchema = new Schema({
+  url: { type: String, required: true },
+  publicId: { type: String, default: "" },
+  thumbnailUrl: { type: String, default: "" },
+  provider: { type: String, enum: ["cloudinary", "youtube", "vimeo"], required: true },
+  title: { type: String, default: "" },
+  sortOrder: { type: Number, default: 0 },
+}, { _id: false });
+
 const ServiceSchema = new Schema({
   title: { type: String, default: "", trim: true },
   titleAr: { type: String, required: true, trim: true },
@@ -9,6 +25,10 @@ const ServiceSchema = new Schema({
   shortDescription: { type: String, default: "" },
   shortDescriptionAr: { type: String, default: "" },
   image: { type: String, default: "" },
+  gallery: { type: [String], default: [] },
+  images: { type: [ImageMediaSchema], default: [] },
+  videos: { type: [VideoMediaSchema], default: [] },
+  coverImage: { type: String, default: "" },
   icon: { type: String, default: "" },
   category: { type: String, required: true, trim: true },
   price: { type: Number, min: 0 },
