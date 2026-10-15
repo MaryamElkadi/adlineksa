@@ -93,7 +93,10 @@ export default function AdminProductsPage() {
 
   const load = async () => {
     try {
-      const [products, categoryList] = await Promise.all([api.getProducts(), api.getCategories()]);
+      const [products, categoryList] = await Promise.all([
+        api.getProducts({ compact: true }),
+        api.getCategories(),
+      ]);
       setProductList(products);
       setCategories(categoryList);
       if (categoryList.length > 0 && !formData.categorySlug) {
@@ -117,28 +120,34 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (product: Product) => {
-    setEditingId(product.id);
-    setFormData({
-      ...product,
-      images: product.images?.length
-        ? product.images
-        : [...new Set([product.coverImage || product.image, ...(product.gallery || [])].filter(Boolean))]
-            .map((url, sortOrder) => ({ url, sortOrder, alt: '' })),
-      videos: product.videos || [],
-      coverImage: product.coverImage || product.image || product.gallery?.[0] || '',
-      materialsList: product.configurableMaterials?.length
-        ? product.configurableMaterials
-        : (product.materials || []).map((m) => ({ label: m, priceModifier: 0 })),
-      sizesList: product.configurableSizes?.length
-        ? product.configurableSizes
-        : (product.availableSizes || []).map((s) => ({ label: s, priceModifier: 0 })),
-      finishesList: product.configurableFinishes || [],
-      quantitiesList: product.configurableQuantityTiers?.length
-        ? product.configurableQuantityTiers
-        : (product.quantityTiers || []).map((q) => ({ quantity: q, unitPrice: product.basePrice || 0 })),
-    });
-    setIsModalOpen(true);
+  const handleOpenEditModal = async (product: Product) => {
+    setError('');
+    try {
+      const fullProduct = await api.getProduct(product.id);
+      setEditingId(fullProduct.id);
+      setFormData({
+        ...fullProduct,
+        images: fullProduct.images?.length
+          ? fullProduct.images
+          : [...new Set([fullProduct.coverImage || fullProduct.image, ...(fullProduct.gallery || [])].filter(Boolean))]
+              .map((url, sortOrder) => ({ url, sortOrder, alt: '' })),
+        videos: fullProduct.videos || [],
+        coverImage: fullProduct.coverImage || fullProduct.image || fullProduct.gallery?.[0] || '',
+        materialsList: fullProduct.configurableMaterials?.length
+          ? fullProduct.configurableMaterials
+          : (fullProduct.materials || []).map((m) => ({ label: m, priceModifier: 0 })),
+        sizesList: fullProduct.configurableSizes?.length
+          ? fullProduct.configurableSizes
+          : (fullProduct.availableSizes || []).map((s) => ({ label: s, priceModifier: 0 })),
+        finishesList: fullProduct.configurableFinishes || [],
+        quantitiesList: fullProduct.configurableQuantityTiers?.length
+          ? fullProduct.configurableQuantityTiers
+          : (fullProduct.quantityTiers || []).map((q) => ({ quantity: q, unitPrice: fullProduct.basePrice || 0 })),
+      });
+      setIsModalOpen(true);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not load product.');
+    }
   };
 
   // Option Handlers

@@ -42,12 +42,12 @@ export async function GET(request: Request) {
     const isPaginated = Boolean(limitParam || pageParam || format === "paginated");
     const isCompact = compactParam === "true" || (isPaginated && compactParam !== "false");
 
-    let queryBuilder = Product.find(query).sort({ createdAt: -1 });
+    let queryBuilder = Product.find(query).sort({ _id: -1 });
 
     // Use projection for card listings to avoid returning huge documents
     if (isCompact) {
       queryBuilder = queryBuilder.select(
-        "name nameAr slug categorySlug description image coverImage basePrice rating reviewCount badge featured bestseller newArrival active updatedAt"
+        "name nameAr slug categorySlug description image coverImage basePrice rating reviewCount badge featured bestseller newArrival active configurableQuantityTiers quantityTiers updatedAt"
       );
     }
 

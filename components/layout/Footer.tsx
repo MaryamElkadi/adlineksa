@@ -23,7 +23,7 @@ export const Footer: React.FC = () => {
               المنصة الرائدة للطباعة الرقمية والإعلانات في المملكة العربية السعودية. جودة عالية للشركات، شحن سريع، وحساب فوري وذكّي للأسعار.
             </p>
             <div className="text-xs text-amber-600 font-bold">
-              📍 الرياض | جدة | الدمام | الخبر
+              📍 ا الدمام | الخبر
             </div>
           </div>
 
@@ -68,9 +68,7 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2.5 text-xs font-semibold">
               <li>
-                <Link href="/dashboard" className="hover:text-brand-blue transition-colors">
-                  لوحة المستخدم والطلبات
-                </Link>
+            
               </li>
               <li>
                 <Link href="/account" className="hover:text-brand-blue transition-colors">
@@ -78,9 +76,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/admin/login" className="hover:text-brand-blue text-amber-600 transition-colors">
-                  بوابة لوحة التحكم والإدارة 🔐
-                </Link>
+              
               </li>
               <li>
                 <Link href="/about" className="hover:text-brand-blue transition-colors">
@@ -113,7 +109,7 @@ export const Footer: React.FC = () => {
                 </a>
               </p>
               <p>✉️ البريد الإلكتروني: sales@adlineksa.com</p>
-              <p>🕒 أوقات العمل: الأحد - الخميس (8:00 صباحاً - 6:00 مساءً)</p>
+              <p>🕒 أوقات العمل: الأحد - الخميس (8:00 صباحاً - 12:30 مساءً)</p>
             </div>
             <div className="mt-5 max-w-52.5">
               <ProductsQrCode />
@@ -125,10 +121,7 @@ export const Footer: React.FC = () => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} خط الإعلان السعودية. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-4 text-slate-600 font-semibold">
-            <span>💳 مدى</span>
-            <span>💳 فيزا</span>
-            <span>💳 ماستركارد</span>
-            <span>📱 أبل باي</span>
+          
           </div>
         </div>
       </div>
