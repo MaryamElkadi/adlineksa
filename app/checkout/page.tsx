@@ -9,7 +9,7 @@ import { formatCurrency } from '@/lib/utils';
 import { api } from '@/services/api';
 
 export default function CheckoutPage() {
-  const { items, total, clearCart } = useCart();
+  const { items, total, subtotal, tax, shipping, clearCart, updateQuantity, removeItem } = useCart();
 
   const [paymentMethod, setPaymentMethod] = useState<'mada' | 'applepay' | 'stcpay' | 'invoice'>('mada');
   const [orderPlaced, setOrderPlaced] = useState<any>(null);
@@ -152,19 +152,111 @@ export default function CheckoutPage() {
             مراجعة الطلب ({items.length} منتجات) 🛍️
           </h2>
 
-          <div className="space-y-3 max-h-60 overflow-y-auto pl-1">
+          <div className="space-y-3 max-h-[26rem] overflow-y-auto pl-1">
             {items.map((it) => (
-              <div key={it.id} className="flex justify-between text-xs font-semibold text-slate-700 bg-white/80 p-2.5 rounded-xl border border-slate-100">
-                <span>
-                  {it.productName} <span className="text-slate-400">(x{it.quantity})</span>
-                </span>
-                <span className="font-bold text-amber-600">{formatCurrency(it.totalPrice)}</span>
+              <div
+                key={it.id}
+                className="bg-white/80 rounded-xl border border-slate-100 p-3 space-y-2 transition-all hover:border-amber-200 hover:shadow-sm"
+              >
+                {/* Product name & remove */}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-800 leading-snug flex-1">
+                    {it.productName}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(it.id)}
+                    className="text-slate-400 hover:text-red-500 transition-colors text-sm leading-none shrink-0"
+                    aria-label="حذف المنتج"
+                    title="حذف"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Size & Material info */}
+                {(it.size || it.material) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {it.size && (
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">
+                        {it.size}
+                      </span>
+                    )}
+                    {it.material && (
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">
+                        {it.material}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Quantity controls & price */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-0 border border-slate-200 rounded-lg overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(it.id, it.quantity - 1)}
+                      className="w-7 h-7 flex items-center justify-center text-sm font-bold text-slate-600 bg-slate-50 hover:bg-red-50 hover:text-red-500 transition-colors"
+                      aria-label="تقليل الكمية"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      value={it.quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val > 0) {
+                          updateQuantity(it.id, val);
+                        }
+                      }}
+                      className="w-12 h-7 text-center text-xs font-black text-brand-blue bg-white border-x border-slate-200 outline-none focus:ring-1 focus:ring-amber-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(it.id, it.quantity + 1)}
+                      className="w-7 h-7 flex items-center justify-center text-sm font-bold text-slate-600 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                      aria-label="زيادة الكمية"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <div className="text-left space-y-0.5">
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      {formatCurrency(it.unitPrice)} × {it.quantity}
+                    </div>
+                    <div className="text-xs font-black text-amber-600">
+                      {formatCurrency(it.totalPrice)}
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
+
+            {items.length === 0 && (
+              <div className="text-center py-6 text-xs text-slate-400 font-medium">
+                🛒 السلة فارغة
+              </div>
+            )}
           </div>
 
+          {/* Price breakdown */}
           <div className="pt-4 border-t border-slate-200 space-y-2 text-xs font-bold">
-            <div className="flex justify-between text-base font-black text-brand-blue">
+            <div className="flex justify-between text-slate-600">
+              <span>المجموع الفرعي</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-slate-600">
+              <span>ضريبة القيمة المضافة (15%)</span>
+              <span>{formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between text-slate-600">
+              <span>رسوم التوصيل</span>
+              <span>{shipping === 0 ? 'مجاناً ✨' : formatCurrency(shipping)}</span>
+            </div>
+            <div className="flex justify-between text-base font-black text-brand-blue pt-2 border-t border-dashed border-slate-200">
               <span>الإجمالي المستحق</span>
               <span className="text-amber-600 text-lg">{formatCurrency(total)}</span>
             </div>
@@ -176,6 +268,7 @@ export default function CheckoutPage() {
             variant="yellow"
             className="w-full font-black text-base py-3.5 !text-slate-800 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-500 transition-all shadow-md hover:shadow-lg border-0"
             isLoading={isSubmitting}
+            disabled={items.length === 0}
           >
             تأكيد ودفع {formatCurrency(total)} 🚀
           </Button>

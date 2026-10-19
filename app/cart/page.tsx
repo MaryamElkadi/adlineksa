@@ -91,15 +91,26 @@ export default function CartPage() {
                   {/* Quantity Control */}
                   <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 50)}
-                      className="px-3 py-1 text-slate-600 hover:text-brand-blue hover:bg-slate-200 font-bold transition-colors"
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      className="px-3 py-1 text-slate-600 hover:text-red-500 hover:bg-red-50 font-bold transition-colors"
                     >
-                      -
+                      −
                     </button>
-                    <span className="px-3 text-xs font-black text-brand-blue">{item.quantity}</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val > 0) {
+                          updateQuantity(item.id, val);
+                        }
+                      }}
+                      className="w-16 text-center text-xs font-black text-brand-blue bg-white border-x border-slate-200 py-1 outline-none focus:ring-1 focus:ring-amber-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 50)}
-                      className="px-3 py-1 text-slate-600 hover:text-brand-blue hover:bg-slate-200 font-bold transition-colors"
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      className="px-3 py-1 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 font-bold transition-colors"
                     >
                       +
                     </button>
