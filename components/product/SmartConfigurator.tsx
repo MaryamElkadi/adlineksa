@@ -40,8 +40,16 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || 'قياسي');
   const [selectedMaterial, setSelectedMaterial] = useState(materialOptions[0] || 'افتراضي');
   const [quantity, setQuantity] = useState(() => getInitialQuantity(product));
+  const finishOptions = (product.configurableFinishes || [])
+    .filter((finish) => finish.label && finish.label.trim() !== '')
+    .map((finish) => ({
+      id: finish.label,
+      label: finish.label,
+      priceModifier: Number(finish.priceModifier) || 0,
+    }));
+
   const [lamination, setLamination] = useState(
-    product.configurableFinishes?.[0]?.label || 'none'
+    product.configurableFinishes?.[0]?.label || ''
   );
   const [customNotes, setCustomNotes] = useState('');
   const [fileUploaded, setFileUploaded] = useState<string | null>(null);
@@ -59,7 +67,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
 
   const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
   const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
-  const finishOption = product.configurableFinishes?.find((f) => f.label === lamination);
+  const finishOption = finishOptions.find((f) => f.label === lamination);
 
   const matAddon = matOption ? matOption.priceModifier : 0;
   const sizeAddon = sizeOption ? sizeOption.priceModifier : 0;
@@ -77,18 +85,6 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     : (product.quantityTiers?.length
         ? [...new Set(product.quantityTiers)].filter((q) => Number.isFinite(q) && q > 0).sort((a, b) => a - b)
         : [100, 250, 500, 1000, 2500]);
-  const finishOptions = product.configurableFinishes?.length
-    ? product.configurableFinishes.map((finish) => ({
-        id: finish.label,
-        label: finish.label,
-        priceModifier: finish.priceModifier,
-      }))
-    : [
-        { id: 'none', label: 'مطفي قياسي', priceModifier: 0 },
-        { id: 'gloss', label: 'لامع UV', priceModifier: 0 },
-        { id: 'velvet', label: 'مخملي ناعم', priceModifier: 0 },
-        { id: 'foil', label: 'بصمة ذهبية معدنية', priceModifier: 0 },
-      ];
 
 
   const handleAddToCart = () => {
@@ -123,56 +119,62 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       </div>
 
       {/* الخطوة 1: اختيار المادة */}
-      <div>
-        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
-          1. اختر خامة الورق والمادة
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {materialOptions.map((mat) => {
-            const priceModifier = product.configurableMaterials?.find((option) => option.label === mat)?.priceModifier || 0;
-            return (
-              <button
-                key={mat}
-                onClick={() => setSelectedMaterial(mat)}
-                className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
-                  selectedMaterial === mat
-                    ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                <span>{mat}</span>
-                {priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(priceModifier)}</span>}
-              </button>
-            );
-          })}
+      {materialOptions.length > 0 && (
+        <div>
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
+            1. اختر خامة الورق والمادة
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {materialOptions.map((mat) => {
+              const priceModifier = product.configurableMaterials?.find((option) => option.label === mat)?.priceModifier || 0;
+              return (
+                <button
+                  key={mat}
+                  type="button"
+                  onClick={() => setSelectedMaterial(mat)}
+                  className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
+                    selectedMaterial === mat
+                      ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <span>{mat}</span>
+                  {priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(priceModifier)}</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* الخطوة 2: اختيار المقاس */}
-      <div>
-        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
-          2. اختر المقاس والأبعاد
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {sizeOptions.map((sz) => {
-            const priceModifier = product.configurableSizes?.find((option) => option.label === sz)?.priceModifier || 0;
-            return (
-              <button
-                key={sz}
-                onClick={() => setSelectedSize(sz)}
-                className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
-                  selectedSize === sz
-                    ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                <span>{sz}</span>
-                {priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(priceModifier)}</span>}
-              </button>
-            );
-          })}
+      {sizeOptions.length > 0 && (
+        <div>
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
+            2. اختر المقاس والأبعاد
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {sizeOptions.map((sz) => {
+              const priceModifier = product.configurableSizes?.find((option) => option.label === sz)?.priceModifier || 0;
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => setSelectedSize(sz)}
+                  className={`p-3 rounded-xl border text-xs text-right font-bold transition-all ${
+                    selectedSize === sz
+                      ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <span>{sz}</span>
+                  {priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(priceModifier)}</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* الخطوة 3: الكمية */}
       <div>
@@ -221,27 +223,30 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       </div>
 
       {/* الخطوة 4: التغليف / اللمسات الأخيرة */}
-      <div>
-        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
-          4. السلفنة واللمسات الخاصة
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {finishOptions.map((finish) => (
-            <button
-              key={finish.id}
-              onClick={() => setLamination(finish.id)}
-              className={`p-3 rounded-xl border text-xs font-bold text-center transition-all ${
-                lamination === finish.id
-                  ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
-                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-              }`}
-            >
-              <span>{finish.label}</span>
-              {finish.priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(finish.priceModifier)}</span>}
-            </button>
-          ))}
+      {finishOptions.length > 0 && (
+        <div>
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
+            4. السلفنة واللمسات الخاصة
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {finishOptions.map((finish) => (
+              <button
+                key={finish.id}
+                type="button"
+                onClick={() => setLamination(finish.id)}
+                className={`p-3 rounded-xl border text-xs font-bold text-center transition-all ${
+                  lamination === finish.id
+                    ? 'border-brand-blue bg-blue-50 text-brand-blue shadow-sm'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <span>{finish.label}</span>
+                {finish.priceModifier !== 0 && <span className="mt-1 block text-amber-700">+{formatCurrency(finish.priceModifier)}</span>}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* قسم رفع الملفات */}
       {!needDesign ? (

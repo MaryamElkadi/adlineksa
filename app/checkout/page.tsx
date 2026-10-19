@@ -142,30 +142,7 @@ export default function CheckoutPage() {
 
           {/* Payment Selection */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs">
-            <h2 className="text-lg font-black text-brand-blue mb-2 flex items-center gap-2">
-              <span>2️⃣</span> طريقة الدفع
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { id: 'mada', label: '💳 مدى / بطاقات' },
-                { id: 'applepay', label: '📱 Apple Pay' },
-                { id: 'stcpay', label: '📲 STC Pay' },
-                { id: 'invoice', label: '📄 تحويل بنكي' },
-              ].map((method) => (
-                <button
-                  type="button"
-                  key={method.id}
-                  onClick={() => setPaymentMethod(method.id as any)}
-                  className={`p-3.5 rounded-2xl border text-xs font-black text-center transition-all cursor-pointer ${
-                    paymentMethod === method.id
-                      ? 'border-amber-400 bg-amber-50 text-amber-900 shadow-xs ring-2 ring-amber-300'
-                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100'
-                  }`}
-                >
-                  {method.label}
-                </button>
-              ))}
-            </div>
+
           </div>
         </div>
 
