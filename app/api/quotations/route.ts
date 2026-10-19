@@ -27,35 +27,36 @@ function sanitizeQuotation(doc: any, isAdmin: boolean) {
 export async function GET(request: Request) {
   try {
     const currentUser = await getCurrentUser();
-
     if (!currentUser) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
     const { searchParams } = new URL(request.url);
     const isAdminParam = searchParams.get("admin") === "true";
     const isAdmin = currentUser.role === "admin" && isAdminParam;
-
+    const page = parseInt(searchParams.get('page') || '0', 10);
+    const limit = parseInt(searchParams.get('limit') || '0', 10);
     await connectToDatabase();
-
     const query: any = {};
-    if (!isAdmin) {
-      query.userId = currentUser._id;
+    if (!isAdmin) query.userId = currentUser._id;
+    // Projection: only fields needed for listing
+    const projection = { _id: 1, quoteNumber: 1, title: 1, category: 1, quantity: 1, status: 1, createdAt: 1, userId: 1 };
+    if (page > 0 && limit > 0) {
+      const total = await Quotation.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+      const quotes = await Quotation.find(query, projection)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+      const data = quotes.map((q: any) => sanitizeQuotation(q, isAdmin));
+      return NextResponse.json({ quotes: data, pagination: { page, limit, total, totalPages } });
     }
-
-    const quotations = await Quotation.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
-
-    return NextResponse.json(
-      quotations.map((q: any) => sanitizeQuotation(q, currentUser.role === "admin"))
-    );
+    const quotations = await Quotation.find(query, projection).sort({ createdAt: -1 }).lean();
+    return NextResponse.json(quotations.map((q: any) => sanitizeQuotation(q, isAdmin)));
   } catch (error) {
-    console.error("GET QUOTATIONS ERROR:", error);
-    return NextResponse.json(
-      { message: "Could not load quotations" },
-      { status: 500 }
-    );
+    console.error('GET QUOTATIONS ERROR:', error);
+    return NextResponse.json({ message: 'Could not load quotations' }, { status: 500 });
   }
 }
 

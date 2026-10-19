@@ -34,8 +34,30 @@ export async function GET(request: Request) {
       query.userId = currentUser._id;
     }
 
-    const artworks = await Artwork.find(query).sort({ createdAt: -1 }).lean();
+    // Pagination parameters (optional)
+    const page = parseInt(searchParams.get('page') || '0', 10);
+    const limit = parseInt(searchParams.get('limit') || '0', 10);
 
+    // Projection: only fields needed for artwork listings
+    const projection = { _id: 1, name: 1, fileUrl: 1, createdAt: 1, type: 1, image: 1 };
+
+    // Base query with projection, sorting, and lean for plain objects
+    let artworksQuery = Artwork.find(query, projection).sort({ createdAt: -1 }).lean();
+
+    if (page > 0 && limit > 0) {
+      const total = await Artwork.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+      artworksQuery = artworksQuery.skip(skip).limit(limit);
+      const artworks = await artworksQuery;
+      return NextResponse.json({
+        artworks: artworks.map(serializeArtwork),
+        pagination: { page, limit, total, totalPages },
+      });
+    }
+
+    // No pagination – return all (still lean + projection)
+    const artworks = await artworksQuery;
     return NextResponse.json(artworks.map(serializeArtwork));
   } catch (error) {
     console.error("GET ARTWORKS ERROR:", error);

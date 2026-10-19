@@ -32,18 +32,70 @@ export async function GET(request: Request) {
       ];
     }
 
-    const users = await User.find(query).sort({ createdAt: -1 }).lean();
+    // Pagination parameters (optional)
+    const page = parseInt(searchParams.get('page') || '0', 10);
+    const limit = parseInt(searchParams.get('limit') || '0', 10);
 
-    // Fetch order statistics for each user
+    // Projection for user list (exclude sensitive data)
+    const projection = {
+      _id: 1,
+      firstName: 1,
+      lastName: 1,
+      email: 1,
+      phone: 1,
+      role: 1,
+      isActive: 1,
+      createdAt: 1,
+    };
+
+    // Base aggregation pipeline
+    const pipeline: any[] = [{ $match: query }];
+    pipeline.push({ $project: projection });
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    // If pagination requested, apply skip/limit and total count
+    if (page > 0 && limit > 0) {
+      const total = await User.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+      pipeline.push({ $skip: skip });
+      pipeline.push({ $limit: limit });
+      const users = await User.aggregate(pipeline);
+      // Lookup orders for each user and compute stats
+      const usersWithStats = await Promise.all(
+        users.map(async (u: any) => {
+          const userOrders = await Order.find({ userId: u._id }).lean();
+          const ordersCount = userOrders.length;
+          const totalSpent = userOrders.reduce((sum: number, ord: any) => sum + (ord.total || 0), 0);
+          return {
+            _id: u._id.toString(),
+            id: u._id.toString(),
+            firstName: u.firstName || "",
+            lastName: u.lastName || "",
+            fullName: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "بدون اسم",
+            email: u.email || "",
+            phone: u.phone || "",
+            role: u.role || "user",
+            isActive: u.isActive !== undefined ? u.isActive : true,
+            ordersCount,
+            totalSpent,
+            createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
+          };
+        })
+      );
+      return NextResponse.json({
+        users: usersWithStats,
+        pagination: { page, limit, total, totalPages },
+      });
+    }
+
+    // No pagination – return all users with stats
+    const users = await User.aggregate(pipeline);
     const usersWithStats = await Promise.all(
       users.map(async (u: any) => {
         const userOrders = await Order.find({ userId: u._id }).lean();
         const ordersCount = userOrders.length;
-        const totalSpent = userOrders.reduce(
-          (sum: number, ord: any) => sum + (ord.total || 0),
-          0
-        );
-
+        const totalSpent = userOrders.reduce((sum: number, ord: any) => sum + (ord.total || 0), 0);
         return {
           _id: u._id.toString(),
           id: u._id.toString(),
@@ -56,13 +108,10 @@ export async function GET(request: Request) {
           isActive: u.isActive !== undefined ? u.isActive : true,
           ordersCount,
           totalSpent,
-          createdAt: u.createdAt
-            ? new Date(u.createdAt).toISOString()
-            : new Date().toISOString(),
+          createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
         };
       })
     );
-
     return NextResponse.json(usersWithStats);
   } catch (error) {
     console.error("GET USERS ERROR:", error);

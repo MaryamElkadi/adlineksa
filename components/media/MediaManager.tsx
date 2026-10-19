@@ -162,7 +162,7 @@ export function MediaManager({ images, videos, coverImage, onCoverImageChange, o
       <div className="grid gap-3 sm:grid-cols-2">
         {images.map((image, index) => (
           <div key={`${image.publicId || image.url}-${index}`} className="flex items-center gap-3 rounded-xl border border-slate-200 p-2">
-            <Image src={image.url} alt={image.alt || `صورة ${index + 1}`} width={80} height={64} unoptimized={!isOptimizableImageUrl(image.url)} className="h-16 w-20 rounded-lg bg-slate-100 object-cover" />
+            <Image src={image.url} alt={image.alt || `صورة ${index + 1}`} width={80} height={64} loader={({ src }) => src} unoptimized={!isOptimizableImageUrl(image.url)} className="h-16 w-20 rounded-lg bg-slate-100 object-cover" />
             <div className="min-w-0 flex-1">
               <span className="block text-xs font-bold text-slate-700">{image.url === coverImage ? "صورة الغلاف" : `صورة ${index + 1}`}</span>
               <label className="mt-1 block text-[10px] text-slate-600">

@@ -8,10 +8,14 @@ import { formatCurrency, getProductStartingPriceDetails } from '@/lib/utils';
 import { isOptimizableImageUrl } from '@/lib/media';
 
 interface ProductCardProps {
+  /**
+   * Set to true for the above‑the‑fold product image to enable priority loading.
+   */
   product: Product;
+  priority?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, priority }) => {
   const startingPrice = getProductStartingPriceDetails(
     product.basePrice,
     product.configurableQuantityTiers
@@ -28,7 +32,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             src={product.coverImage || product.image || '/products/printing.png'}
             alt={product.nameAr || product.name}
             fill
-            loading="lazy"
+
+            priority={Boolean(priority)}
+            loading={priority ? undefined : 'lazy'}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
             quality={75}
             unoptimized={!isOptimizableImageUrl(product.coverImage || product.image || '/products/printing.png')}
@@ -66,7 +72,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <span className="text-[10px] text-slate-400 block">يبدأ من</span>
               <span className="text-lg font-black text-brand-blue">{formatCurrency(startingPrice.unitPrice)}</span>
               <span className="block text-[10px] text-slate-400">
-                للقطعة عند {startingPrice.quantity} قطعة
+                {startingPrice.quantity > 1 ? `لـ ${startingPrice.quantity} قطعة` : 'للقطعة'}
               </span>
             </div>
 

@@ -49,8 +49,31 @@ export async function GET(request: Request) {
       query.status = statusFilter;
     }
 
-    const tickets = await Ticket.find(query).sort({ updatedAt: -1 }).lean();
+    // Pagination parameters (optional)
+    const page = parseInt(searchParams.get('page') || '0', 10);
+    const limit = parseInt(searchParams.get('limit') || '0', 10);
 
+    // Projection: only fields needed for list view
+    const projection = { _id: 1, ticketNumber: 1, subject: 1, status: 1, priority: 1, updatedAt: 1, messages: 1, userId: 1 };
+
+    // Base query with projection, sorting, and lean for plain objects
+    let ticketsQuery = Ticket.find(query, projection).sort({ updatedAt: -1 }).lean();
+
+    // If pagination requested, apply skip/limit and include pagination metadata
+    if (page > 0 && limit > 0) {
+      const total = await Ticket.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+      ticketsQuery = ticketsQuery.skip(skip).limit(limit);
+      const tickets = await ticketsQuery;
+      return NextResponse.json({
+        tickets: tickets.map((t: any) => sanitizeTicket(t, currentUser.role === "admin")),
+        pagination: { page, limit, total, totalPages },
+      });
+    }
+
+    // No pagination – return all (still lean + projection)
+    const tickets = await ticketsQuery;
     return NextResponse.json(
       tickets.map((t: any) => sanitizeTicket(t, currentUser.role === "admin"))
     );

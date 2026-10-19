@@ -24,11 +24,11 @@ export async function GET() {
       pendingProofs,
       openTickets,
     ] = await Promise.all([
-      Order.find({}).sort({ createdAt: -1 }).lean(),
-      Quotation.find({}).sort({ createdAt: -1 }).lean(),
+      Order.find({}, { _id: 1, orderNumber: 1, total: 1, status: 1, createdAt: 1, customer: 1, items: 1 }).sort({ createdAt: -1 }).lean(),
+      Quotation.find({}, { _id: 1, title: 1, createdAt: 1, status: 1, userId: 1 }).sort({ createdAt: -1 }).lean(),
       Product.countDocuments({}),
       Category.countDocuments({}),
-      User.find({}).sort({ createdAt: -1 }).lean(),
+      User.find({}, { _id: 1, firstName: 1, lastName: 1, email: 1, phone: 1, role: 1, isActive: 1, createdAt: 1 }).sort({ createdAt: -1 }).lean(),
       Artwork.countDocuments({ type: "proof", proofStatus: "pending" }),
       Ticket.countDocuments({ status: { $in: ["Open", "In Progress"] } }),
     ]);

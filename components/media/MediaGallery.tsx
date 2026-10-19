@@ -53,7 +53,7 @@ export function MediaGallery({
 
   if (!items.length) {
     return <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-slate-100">
-      <Image src="/products/printing.png" alt={alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+      <Image src="/products/printing.png" alt={alt} fill sizes="(max-width: 1024px) 100vw, 50vw" loader={({ src }) => src} className="object-cover" />
     </div>;
   }
 
@@ -61,7 +61,7 @@ export function MediaGallery({
     <div dir="rtl" className="flex flex-col gap-4">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-lg">
         {selected?.kind === "image" ? (
-          <Image src={selected.url || "/products/printing.png"} alt={selected.alt} fill priority sizes="(max-width: 1024px) 100vw, 50vw" quality={75} unoptimized={!optimizedSource(selected.url)} className="object-contain" />
+          <Image src={selected.url || "/products/printing.png"} alt={selected.alt} fill priority sizes="(max-width: 1024px) 100vw, 50vw" quality={75} loader={({ src }) => src} unoptimized={!optimizedSource(selected.url)} className="object-contain" />
         ) : selected?.video.provider === "cloudinary" ? (
           <video src={selected.video.url} poster={selected.video.thumbnailUrl || undefined} controls preload="metadata" className="h-full w-full object-contain" aria-label={selected.video.title || alt} />
         ) : (
@@ -78,9 +78,9 @@ export function MediaGallery({
             return (
               <button key={item.key} type="button" aria-label={item.kind === "image" ? `عرض الصورة ${index + 1}` : `عرض الفيديو ${index + 1}`} aria-pressed={active} onClick={() => setSelectedKey(item.key)} className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${active ? "scale-105 border-amber-400" : "border-slate-200 opacity-75 hover:opacity-100"}`}>
                 {item.kind === "image" ? (
-                  <Image src={item.url || "/products/printing.png"} alt="" fill loading="lazy" sizes="80px" quality={72} unoptimized={!optimizedSource(item.url)} className="object-cover" />
+                  <Image src={item.url || "/products/printing.png"} alt="" fill loading="lazy" sizes="80px" quality={72} loader={({ src }) => src} unoptimized={!optimizedSource(item.url)} className="object-cover" />
                 ) : item.video.thumbnailUrl ? (
-                  <Image src={item.video.thumbnailUrl} alt="" fill loading="lazy" sizes="80px" unoptimized={!optimizedSource(item.video.thumbnailUrl)} className="object-cover" />
+                  <Image src={item.video.thumbnailUrl} alt="" fill loading="lazy" sizes="80px" loader={({ src }) => src} unoptimized={!optimizedSource(item.video.thumbnailUrl)} className="object-cover" />
                 ) : <span className="flex h-full items-center justify-center bg-slate-900 text-xl text-white" aria-hidden="true">▶</span>}
                 {item.kind === "video" && <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1 text-[9px] text-white">فيديو</span>}
               </button>

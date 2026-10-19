@@ -11,14 +11,20 @@ interface SmartConfiguratorProps {
 }
 
 function getInitialQuantity(product: Product) {
-  const minimum = Math.max(1, Number(product.minQuantity) || 1);
   const tiers = (product.configurableQuantityTiers || [])
     .filter((tier) => Number.isFinite(tier.quantity) && tier.quantity > 0)
     .sort((a, b) => a.quantity - b.quantity);
 
-  return tiers.find((tier) => tier.quantity >= minimum)?.quantity
-    ?? tiers[0]?.quantity
-    ?? minimum;
+  if (tiers.length > 0) {
+    return tiers[0].quantity;
+  }
+
+  if (product.quantityTiers && product.quantityTiers.length > 0) {
+    const sorted = [...product.quantityTiers].filter((q) => q > 0).sort((a, b) => a - b);
+    return sorted[0] || Math.max(1, Number(product.minQuantity) || 1);
+  }
+
+  return Math.max(1, Number(product.minQuantity) || 1);
 }
 
 export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product }) => {
@@ -43,8 +49,13 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [needDesign, setNeedDesign] = useState(false);
   const [designBrief, setDesignBrief] = useState('');
 
+  const hasConfigurableTiers = Boolean(
+    product.configurableQuantityTiers && product.configurableQuantityTiers.length > 0
+  );
   const matchingTier = product.configurableQuantityTiers?.find((t) => t.quantity === quantity);
-  const baseUnitPrice = matchingTier?.unitPrice ?? product.basePrice ?? 0;
+  const basePriceForQuantity = matchingTier
+    ? matchingTier.unitPrice
+    : (product.basePrice ?? 0) * (hasConfigurableTiers ? 1 : quantity);
 
   const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
   const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
@@ -56,13 +67,16 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const DESIGN_FEE = needDesign ? product.designFee ?? 75 : 0;
 
   const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE;
-  const totalCalculatedPrice = Math.max(0, baseUnitPrice * quantity + addOnPrice);
+  const totalCalculatedPrice = Math.max(0, basePriceForQuantity + addOnPrice);
   const unitCalculatedPrice = Math.round((totalCalculatedPrice / Math.max(1, quantity)) * 100) / 100;
-  const quantityOptions = product.configurableQuantityTiers?.length
-    ? [...new Set(product.configurableQuantityTiers.map((tier) => tier.quantity))]
-        .filter((tierQuantity) => Number.isFinite(tierQuantity) && tierQuantity > 0)
-        .sort((a, b) => a - b)
-    : [100, 250, 500, 1000, 2500];
+  const quantityOptions = hasConfigurableTiers
+    ? product.configurableQuantityTiers!
+        .filter((tier) => Number.isFinite(tier.quantity) && tier.quantity > 0)
+        .sort((a, b) => a.quantity - b.quantity)
+        .map((tier) => tier.quantity)
+    : (product.quantityTiers?.length
+        ? [...new Set(product.quantityTiers)].filter((q) => Number.isFinite(q) && q > 0).sort((a, b) => a - b)
+        : [100, 250, 500, 1000, 2500]);
   const finishOptions = product.configurableFinishes?.length
     ? product.configurableFinishes.map((finish) => ({
         id: finish.label,
@@ -168,7 +182,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           </label>
           {matchingTier && (
             <span className="text-xs text-amber-600 font-bold">
-              {formatCurrency(matchingTier.unitPrice)} للقطعة عند هذه الكمية
+              السعر لهذه الكمية: {formatCurrency(matchingTier.unitPrice)}
             </span>
           )}
         </div>
@@ -178,28 +192,31 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
             return (
               <button
                 key={q}
+                type="button"
                 onClick={() => setQuantity(q)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-black border transition-all ${
+                className={`px-4 py-2.5 rounded-xl text-xs font-black border transition-all ${
                   quantity === q
-                    ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-xs'
+                    ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-md scale-105'
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
                 }`}
               >
-                <span className="block">{q}</span>
+                <span className="block text-sm">{q} قطعة</span>
                 {tier && (
-                  <span className="mt-1 block font-semibold">
-                    {formatCurrency(tier.unitPrice)} / قطعة
+                  <span className="mt-0.5 block font-bold text-slate-800">
+                    {formatCurrency(tier.unitPrice)}
                   </span>
                 )}
               </button>
             );
           })}
-          <input
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-            className="w-24 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-brand-blue text-center font-bold"
-          />
+          {!hasConfigurableTiers && (
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-24 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-brand-blue text-center font-bold"
+            />
+          )}
         </div>
       </div>
 

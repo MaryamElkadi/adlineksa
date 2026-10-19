@@ -13,7 +13,7 @@ function serializeQuotation(quotation: any) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const userId = await getCurrentUserId();
 
@@ -26,15 +26,29 @@ export async function GET() {
 
     await connectToDatabase();
 
-    const quotations = await Quotation.find({
-      userId,
-    }).sort({
-      createdAt: -1,
-    });
+    const { searchParams } = new URL(request.url);
+    // Pagination parameters (optional)
+    const page = parseInt(searchParams.get('page') || '0', 10);
+    const limit = parseInt(searchParams.get('limit') || '0', 10);
+    // Projection: only fields needed for listings
+    const projection = { _id: 1, title: 1, createdAt: 1, status: 1, userId: 1 };
+    // Base query with projection, sorting, and lean for plain objects
+    let quotationsQuery = Quotation.find({ userId }, projection).sort({ createdAt: -1 }).lean();
+    if (page > 0 && limit > 0) {
+      const total = await Quotation.countDocuments({ userId });
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+      quotationsQuery = quotationsQuery.skip(skip).limit(limit);
+      const quotations = await quotationsQuery;
+      return NextResponse.json({
+        quotations: quotations.map(serializeQuotation),
+        pagination: { page, limit, total, totalPages },
+      });
+    }
+    // No pagination – return all (still lean + projection)
+    const quotations = await quotationsQuery;
 
-    return NextResponse.json(
-      quotations.map(serializeQuotation)
-    );
+    return NextResponse.json(quotations.map(serializeQuotation));
   } catch (error) {
     console.error("GET QUOTATIONS ERROR:", error);
 

@@ -70,10 +70,10 @@ const initialFormState: ProductFormState = {
     { label: 'High Gloss UV', priceModifier: 10 },
   ],
   quantitiesList: [
-    { quantity: 100, unitPrice: 10 },
-    { quantity: 250, unitPrice: 8.5 },
-    { quantity: 500, unitPrice: 7 },
-    { quantity: 1000, unitPrice: 5 },
+    { quantity: 100, unitPrice: 150 },
+    { quantity: 250, unitPrice: 250 },
+    { quantity: 500, unitPrice: 400 },
+    { quantity: 1000, unitPrice: 650 },
   ],
   seoTitle: '',
   seoDescription: '',
@@ -358,7 +358,7 @@ export default function AdminProductsPage() {
                 {marketplace && <th className="p-4">اختيار</th>}
                 <th className="p-4">المنتج</th>
                 <th className="p-4">الفئة</th>
-                <th className="p-4">أقل سعر للقطعة</th>
+                <th className="p-4">السعر المبدئي</th>
                 <th className="p-4">شرائح الكميات</th>
                 <th className="p-4 text-left">الإجراءات</th>
               </tr>
@@ -411,7 +411,7 @@ export default function AdminProductsPage() {
                       {formatCurrency(startingPrice.unitPrice)}
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      للقطعة عند {startingPrice.quantity} قطعة
+                      {startingPrice.quantity > 1 ? `لـ ${startingPrice.quantity} قطعة` : 'للقطعة'}
                     </span>
                   </td>
                   <td className="p-4">
@@ -631,8 +631,8 @@ export default function AdminProductsPage() {
           <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-300/60 space-y-3">
             <div className="flex justify-between items-center border-b border-amber-200 pb-2">
               <div>
-                <span className="text-xs font-black text-amber-950 block">📦 شرائح الكميات وسعر القطعة لكل كمية</span>
-                <p className="text-[10px] text-amber-800 font-medium">حدد سعر القطعة (Unit Price) بناءً على الكمية</p>
+                <span className="text-xs font-black text-amber-950 block">📦 شرائح الكميات وأسعارها</span>
+                <p className="text-[10px] text-amber-800 font-medium">حدد الكمية والسعر الإجمالي الخاص بها (يظهر للمستخدم السعر كما هو للكمية كاملة دون ضرب)</p>
               </div>
               <button
                 type="button"
@@ -668,7 +668,7 @@ export default function AdminProductsPage() {
                     />
                   </div>
                   <div className="flex-1 flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">السعر لهذه الكمية (ر.س):</span>
+                    <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">السعر (ر.س):</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -678,7 +678,7 @@ export default function AdminProductsPage() {
                     />
                   </div>
                   <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-1.5 rounded-lg whitespace-nowrap">
-                    السعر المحدد: {formatCurrency(item.unitPrice || 0)}
+                    السعر: {formatCurrency(item.unitPrice || 0)}
                   </span>
                   <button
                     type="button"

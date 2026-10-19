@@ -21,10 +21,7 @@ export function getProductStartingPriceDetails(
   basePrice: number,
   quantityTiers?: { quantity: number; unitPrice: number }[]
 ): { quantity: number; unitPrice: number } {
-  const prices = [
-    { quantity: 1, unitPrice: basePrice },
-    ...(quantityTiers || []),
-  ]
+  const validTiers = (quantityTiers || [])
     .filter(({ quantity, unitPrice }) =>
       Number.isFinite(quantity) &&
       quantity > 0 &&
@@ -33,7 +30,11 @@ export function getProductStartingPriceDetails(
     )
     .sort((a, b) => a.unitPrice - b.unitPrice || a.quantity - b.quantity);
 
-  return prices[0] || { quantity: 1, unitPrice: 0 };
+  if (validTiers.length > 0) {
+    return validTiers[0];
+  }
+
+  return { quantity: 1, unitPrice: Number(basePrice) || 0 };
 }
 
 export function calculateConfiguredPrice(
