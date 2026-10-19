@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Category, Product, ConfigOption, QuantityTier, ImageMedia, VideoMedia } from '@/types';
+import { Category, Product, ConfigOption, QuantityTier, ProductColor, ImageMedia, VideoMedia } from '@/types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/forms/Input';
@@ -18,6 +18,8 @@ interface ProductFormState extends Partial<Product> {
   sizesList: ConfigOption[];
   finishesList: ConfigOption[];
   quantitiesList: QuantityTier[];
+  colorsList: ProductColor[];
+  colorSelectionMode: 'custom' | 'predefined';
   images: ImageMedia[];
   videos: VideoMedia[];
   coverImage: string;
@@ -34,7 +36,8 @@ const initialFormState: ProductFormState = {
   discount: 0,
   minQuantity: 1,
   maxQuantity: undefined,
-  stock: undefined,
+  stock: 0,
+  pricingType: 'quantity',
   description: '',
   shortDescription: '',
   brand: '',
@@ -69,12 +72,9 @@ const initialFormState: ProductFormState = {
     { label: 'Standard Matte', priceModifier: 0 },
     { label: 'High Gloss UV', priceModifier: 10 },
   ],
-  quantitiesList: [
-    { quantity: 100, unitPrice: 150 },
-    { quantity: 250, unitPrice: 250 },
-    { quantity: 500, unitPrice: 400 },
-    { quantity: 1000, unitPrice: 650 },
-  ],
+  quantitiesList: [],
+  colorsList: [],
+  colorSelectionMode: 'predefined',
   seoTitle: '',
   seoDescription: '',
 };
@@ -145,6 +145,9 @@ export default function AdminProductsPage() {
         quantitiesList: fullProduct.configurableQuantityTiers?.length
           ? fullProduct.configurableQuantityTiers
           : (fullProduct.quantityTiers || []).map((q) => ({ quantity: q, unitPrice: fullProduct.basePrice || 0 })),
+        colorsList: fullProduct.colors || [],
+        colorSelectionMode: fullProduct.colorSelectionMode || 'predefined',
+        pricingType: fullProduct.pricingType || (fullProduct.configurableQuantityTiers?.length || fullProduct.quantityTiers?.length ? 'tiered' : 'quantity'),
       });
       setIsModalOpen(true);
     } catch (error) {
@@ -203,6 +206,14 @@ export default function AdminProductsPage() {
     });
   };
 
+  const handleColorChange = (index: number, field: 'label' | 'hex', value: string) => {
+    setFormData((prev) => {
+      const updated = [...(prev.colorsList || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, colorsList: updated };
+    });
+  };
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (isSubmitting) return; // Prevent double-click
@@ -219,8 +230,15 @@ export default function AdminProductsPage() {
     const cleanSizes = (formData.sizesList || []).filter((s) => s.label.trim() !== '');
     const cleanFinishes = (formData.finishesList || []).filter((f) => f.label.trim() !== '');
     const cleanQuantities = (formData.quantitiesList || [])
-      .filter((q) => q.quantity > 0)
+      .filter((q) => Number.isInteger(q.quantity) && q.quantity > 0 && Number.isFinite(q.unitPrice) && q.unitPrice >= 0)
       .sort((a, b) => a.quantity - b.quantity);
+    const cleanColors = (formData.colorsList || [])
+      .filter((color) => color.label.trim() && /^#[0-9a-fA-F]{6}$/.test(color.hex));
+    if (formData.pricingType === 'tiered' && cleanQuantities.length === 0) {
+      setError('أضيفي شريحة كمية واحدة على الأقل قبل حفظ المنتج.');
+      setIsSubmitting(false);
+      return;
+    }
 
     // Fallback to default placeholder image if left empty
     const selectedCover = formData.images.find((image) => image.url === formData.coverImage)?.url;
@@ -242,6 +260,8 @@ export default function AdminProductsPage() {
       videos: formData.videos || [],
       gallery: finalImages.filter((image) => image.url !== finalImage).map((image) => image.url),
       basePrice: Number(formData.basePrice) || 0,
+      pricingType: formData.pricingType || 'quantity',
+      stock: Math.max(0, Number(formData.stock) || 0),
       designFee: Number(formData.designFee ?? 75),
       salePrice: formData.salePrice ? Number(formData.salePrice) : undefined,
       discount: formData.discount ? Number(formData.discount) : 0,
@@ -250,11 +270,12 @@ export default function AdminProductsPage() {
       configurableMaterials: cleanMaterials,
       configurableSizes: cleanSizes,
       configurableFinishes: cleanFinishes,
-      configurableQuantityTiers: cleanQuantities,
+      configurableQuantityTiers: formData.pricingType === 'tiered' ? cleanQuantities : [],
+      colors: formData.colorSelectionMode === 'predefined' ? cleanColors : [],
 
       materials: cleanMaterials.map((m) => m.label),
       availableSizes: cleanSizes.map((s) => s.label),
-      quantityTiers: cleanQuantities.map((q) => q.quantity),
+      quantityTiers: formData.pricingType === 'tiered' ? cleanQuantities.map((q) => q.quantity) : [],
     };
 
     try {
@@ -331,11 +352,11 @@ export default function AdminProductsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-amber-500/10 via-amber-50/30 to-transparent p-6 rounded-3xl border border-amber-200/60 shadow-xs">
         <div>
           <span className="inline-block text-xs font-black text-amber-600 bg-amber-100/80 px-3 py-1 rounded-full mb-2">
-            ✨ الحاسبة الذكية وتسعير الكميات
+          ✨ خيارات المنتجات والأسعار والمخزون
           </span>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">إدارة أسعار الخيارات وشرائح الكميات</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">إدارة المنتجات والأسعار والمخزون</h1>
           <p className="text-xs text-slate-600 font-medium mt-0.5">
-            تحديد أسعار مخصصة لكل كمية وإضافات الخامات والمقاسات.
+            تحديد الألوان وطريقة التسعير والكمية المتاحة لكل منتج.
           </p>
         </div>
         <Button
@@ -359,7 +380,8 @@ export default function AdminProductsPage() {
                 <th className="p-4">المنتج</th>
                 <th className="p-4">الفئة</th>
                 <th className="p-4">السعر المبدئي</th>
-                <th className="p-4">شرائح الكميات</th>
+                <th className="p-4">المخزون</th>
+                <th className="p-4">طريقة التسعير</th>
                 <th className="p-4 text-left">الإجراءات</th>
               </tr>
             </thead>
@@ -367,7 +389,9 @@ export default function AdminProductsPage() {
               {productList.map((product) => {
                 const startingPrice = getProductStartingPriceDetails(
                   product.basePrice,
-                  product.configurableQuantityTiers
+                  product.pricingType === 'tiered' || (!product.pricingType && product.configurableQuantityTiers?.length)
+                    ? product.configurableQuantityTiers
+                    : undefined
                 );
 
                 return (
@@ -411,12 +435,17 @@ export default function AdminProductsPage() {
                       {formatCurrency(startingPrice.unitPrice)}
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      {startingPrice.quantity > 1 ? `لـ ${startingPrice.quantity} قطعة` : 'للقطعة'}
+                      {product.pricingType === 'meter' ? 'للمتر' : startingPrice.quantity > 1 ? `لـ ${startingPrice.quantity} قطعة` : 'للقطعة'}
+                    </span>
+                  </td>
+                  <td className="p-4 font-bold">
+                    <span className={(product.stock || 0) > 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                      {product.stock ?? 0}
                     </span>
                   </td>
                   <td className="p-4">
                     <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                      {product.configurableQuantityTiers?.length || product.quantityTiers?.length || 0} شرائح أسعار
+                      {product.pricingType === 'meter' ? 'بالمتر' : product.pricingType === 'quantity' ? 'بالقطعة' : `${product.configurableQuantityTiers?.length || product.quantityTiers?.length || 0} شرائح`}
                     </span>
                   </td>
                   <td className="p-4 text-left space-x-2 space-x-reverse">
@@ -548,7 +577,9 @@ export default function AdminProductsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">السعر الأساسي المفرد (Base Price) *</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  {formData.pricingType === 'meter' ? 'سعر المتر (ر.س) *' : 'السعر الأساسي للوحدة (ر.س) *'}
+                </label>
                 <Input
                   type="number"
                   required
@@ -572,6 +603,36 @@ export default function AdminProductsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">طريقة التسعير *</label>
+                <select
+                  required
+                  value={formData.pricingType || 'quantity'}
+                  onChange={(e) => setFormData({ ...formData, pricingType: e.target.value as Product['pricingType'] })}
+                  className="w-full bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none"
+                >
+                  <option value="quantity">بالقطعة — الكمية × سعر الوحدة</option>
+                  <option value="meter">بالمتر — الطول × سعر المتر</option>
+                  <option value="tiered">شرائح — سعر محدد لكل كمية</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  المخزون المتاح {formData.pricingType === 'meter' ? '(متر)' : '(قطعة)'}
+                </label>
+                <Input
+                  type="number"
+                  required
+                  min="0"
+                  step={formData.pricingType === 'meter' ? '0.01' : '1'}
+                  value={formData.stock ?? 0}
+                  onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                />
+                <p className="mt-1 text-[10px] text-slate-500">يُخصم المخزون تلقائياً عند تأكيد الطلب.</p>
               </div>
             </div>
 
@@ -631,16 +692,24 @@ export default function AdminProductsPage() {
           <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-300/60 space-y-3">
             <div className="flex justify-between items-center border-b border-amber-200 pb-2">
               <div>
-                <span className="text-xs font-black text-amber-950 block">📦 شرائح الكميات وأسعارها</span>
-                <p className="text-[10px] text-amber-800 font-medium">حدد الكمية والسعر الإجمالي الخاص بها (يظهر للمستخدم السعر كما هو للكمية كاملة دون ضرب)</p>
+                <span className="text-xs font-black text-amber-950 block">📦 إعداد الكميات والتسعير</span>
+                <p className="text-[10px] text-amber-800 font-medium">
+                  {formData.pricingType === 'tiered'
+                    ? 'حدد الكمية والسعر الإجمالي الخاص بها.'
+                    : formData.pricingType === 'meter'
+                      ? 'يُحسب السعر بضرب عدد الأمتار في سعر المتر.'
+                      : 'يُحسب السعر بضرب عدد القطع في سعر الوحدة.'}
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={handleAddQuantity}
-                className="text-[11px] font-black text-slate-900 bg-amber-400 hover:bg-amber-300 px-3 py-1 rounded-xl shadow-xs"
-              >
-                + إضافة شريحة كمية
-              </button>
+              {formData.pricingType === 'tiered' && (
+                <button
+                  type="button"
+                  onClick={handleAddQuantity}
+                  className="text-[11px] font-black text-slate-900 bg-amber-400 hover:bg-amber-300 px-3 py-1 rounded-xl shadow-xs"
+                >
+                  + إضافة شريحة كمية
+                </button>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -656,12 +725,14 @@ export default function AdminProductsPage() {
                   onChange={(e) => setFormData({ ...formData, designFee: Number(e.target.value) })}
                 />
               </div>
-              {(formData.quantitiesList || []).map((item, idx) => (
+              {formData.pricingType === 'tiered' && (formData.quantitiesList || []).map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-amber-200/50">
                   <div className="flex-1 flex items-center gap-1">
                     <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">الكمية:</span>
                     <Input
                       type="number"
+                      min="1"
+                      step="1"
                       placeholder="100"
                       value={item.quantity}
                       onChange={(e) => handleQuantityChange(idx, 'quantity', Number(e.target.value))}
@@ -689,6 +760,9 @@ export default function AdminProductsPage() {
                   </button>
                 </div>
               ))}
+              {formData.pricingType === 'tiered' && !formData.quantitiesList?.length && (
+                <p className="text-xs font-semibold text-amber-900">أضيفي شريحة واحدة على الأقل لتفعيل هذا المنتج.</p>
+              )}
             </div>
           </div>
 
@@ -823,6 +897,85 @@ export default function AdminProductsPage() {
                 ))}
               </div>
             </div>
+          </div>
+          <div className="bg-violet-50/60 p-4 rounded-2xl border border-violet-200/70 space-y-3">
+            <div className="flex justify-between items-center border-b border-violet-200 pb-2">
+              <div>
+                <span className="text-xs font-black text-violet-950 block">🎨 لوحة ألوان المنتج</span>
+                <p className="text-[10px] text-violet-800">اختاري طريقة تحديد اللون للعميل.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                aria-pressed={formData.colorSelectionMode === 'custom'}
+                onClick={() => setFormData((prev) => ({ ...prev, colorSelectionMode: 'custom' }))}
+                className={`rounded-xl border p-3 text-right text-xs font-bold ${
+                  formData.colorSelectionMode === 'custom' ? 'border-violet-500 bg-white text-violet-900 ring-2 ring-violet-100' : 'border-violet-200 bg-white/60 text-slate-600'
+                }`}
+              >
+                اختيار حر من لوحة الألوان
+                <span className="mt-1 block text-[10px] font-medium">العميل يختار أي درجة لون.</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={formData.colorSelectionMode === 'predefined'}
+                onClick={() => setFormData((prev) => ({ ...prev, colorSelectionMode: 'predefined' }))}
+                className={`rounded-xl border p-3 text-right text-xs font-bold ${
+                  formData.colorSelectionMode === 'predefined' ? 'border-violet-500 bg-white text-violet-900 ring-2 ring-violet-100' : 'border-violet-200 bg-white/60 text-slate-600'
+                }`}
+              >
+                ألوان محددة مسبقاً
+                <span className="mt-1 block text-[10px] font-medium">العميل يختار من الألوان التي تضيفينها.</span>
+              </button>
+            </div>
+            {formData.colorSelectionMode === 'predefined' && (
+              <>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({
+                      ...prev,
+                      colorsList: [...(prev.colorsList || []), { label: '', hex: '#000000' }],
+                    }))}
+                    className="text-[11px] font-black text-white bg-violet-600 hover:bg-violet-700 px-3 py-1 rounded-xl"
+                  >
+                    + إضافة لون محدد
+                  </button>
+                </div>
+                {(formData.colorsList || []).map((color, index) => (
+                  <div key={index} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-violet-100">
+                    <input
+                      type="color"
+                      aria-label="اختيار لون"
+                      value={color.hex}
+                      onChange={(e) => handleColorChange(index, 'hex', e.target.value)}
+                      className="h-10 w-12 rounded-lg border border-slate-200 bg-white p-1"
+                    />
+                    <Input
+                      required
+                      placeholder="اسم اللون"
+                      value={color.label}
+                      onChange={(e) => handleColorChange(index, 'label', e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({
+                        ...prev,
+                        colorsList: (prev.colorsList || []).filter((_, itemIndex) => itemIndex !== index),
+                      }))}
+                      className="text-rose-500 hover:bg-rose-100 p-2 rounded-xl text-xs"
+                      aria-label="حذف اللون"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {!formData.colorsList?.length && (
+                  <p className="text-[11px] text-violet-700">أضيفي لوناً واحداً على الأقل لاستخدام الألوان المحددة.</p>
+                )}
+              </>
+            )}
           </div>
 <div className="bg-slate-50 p-4 rounded-2xl border space-y-3">
     <span className="text-xs font-black">

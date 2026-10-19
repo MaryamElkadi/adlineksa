@@ -48,7 +48,12 @@ export interface ConfigOption {
 
 export interface QuantityTier {
   quantity: number;   // e.g. 100, 250, 500
-  unitPrice: number;  // Saudi riyals per unit
+  unitPrice: number;  // Total price for this exact quantity
+}
+
+export interface ProductColor {
+  label: string;
+  hex: string;
 }
 
 export interface ImageMedia {
@@ -95,6 +100,8 @@ export interface Product {
 
   // Pricing
   basePrice: number;
+  pricingType?: 'quantity' | 'tiered' | 'meter';
+  colorSelectionMode?: 'custom' | 'predefined';
   designFee?: number;
   salePrice?: number;
   discount?: number;
@@ -104,6 +111,7 @@ export interface Product {
   configurableSizes?: ConfigOption[];
   configurableFinishes?: ConfigOption[];
   configurableQuantityTiers?: QuantityTier[]; // Specific pricing per quantity tier
+  colors?: ProductColor[];
   quantityTiers?: number[];                  // Backward compatibility fallback
 
   // Reviews
@@ -178,7 +186,11 @@ export interface CartItem {
   image: string;
   size: string;
   material: string;
+  color?: string;
+  colorHex?: string;
+  pricingType?: 'quantity' | 'tiered' | 'meter';
   quantity: number;
+  maxStock?: number;
   unitPrice: number;
   totalPrice: number;
   customNotes?: string;

@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'mada' | 'applepay' | 'stcpay' | 'invoice'>('mada');
   const [orderPlaced, setOrderPlaced] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const [form, setForm] = useState({
     fullName: '',
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError('');
 
     try {
       const newOrder = await api.createOrder({
@@ -40,6 +42,7 @@ export default function CheckoutPage() {
       setOrderPlaced(newOrder);
     } catch (err) {
       console.error(err);
+      setSubmitError(err instanceof Error ? err.message : 'تعذر تأكيد الطلب. حاولي مرة أخرى.');
     } finally {
       setIsSubmitting(false);
     }
@@ -93,6 +96,11 @@ export default function CheckoutPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {submitError && (
+          <p role="alert" className="lg:col-span-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+            {submitError}
+          </p>
+        )}
         {/* Customer & Shipping Details */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs">
@@ -185,6 +193,17 @@ export default function CheckoutPage() {
                     {it.material && (
                       <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">
                         {it.material}
+                      </span>
+                    )}
+                    {it.color && (
+                      <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 border border-violet-100 rounded-md px-1.5 py-0.5">
+                        {it.colorHex && <span className="inline-block h-2.5 w-2.5 rounded-full border border-black/15 ml-1 align-middle" style={{ backgroundColor: it.colorHex }} />}
+                        {it.color}
+                      </span>
+                    )}
+                    {it.pricingType === 'meter' && (
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">
+                        بالمتر
                       </span>
                     )}
                   </div>

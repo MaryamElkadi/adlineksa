@@ -136,7 +136,7 @@ async function HomepageProductSection({ filter, title }: { filter: ProductFilter
       await connectToDatabase();
       const items = await Product.find({ active: { $ne: false }, [filter]: true })
         .sort({ featured: -1, bestseller: -1, newArrival: -1, createdAt: -1 })
-        .select('name nameAr slug categorySlug description image basePrice configurableQuantityTiers rating reviewCount badge featured bestseller newArrival active updatedAt')
+        .select('name nameAr slug categorySlug description image basePrice pricingType configurableQuantityTiers rating reviewCount badge featured bestseller newArrival active updatedAt')
         .limit(filter === 'featured' ? 16 : 8)
         .lean();
 
@@ -149,6 +149,7 @@ async function HomepageProductSection({ filter, title }: { filter: ProductFilter
         description: item.description,
         image: homepageImageUrl('products', String(item._id), item.image, item.updatedAt),
         basePrice: item.basePrice,
+        pricingType: item.pricingType,
         configurableQuantityTiers: item.configurableQuantityTiers,
         rating: item.rating,
         reviewCount: item.reviewCount,

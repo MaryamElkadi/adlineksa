@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     // Use projection for card listings to avoid returning huge documents
     if (isCompact) {
       queryBuilder = queryBuilder.select(
-        "name nameAr slug categorySlug description image coverImage basePrice rating reviewCount badge featured bestseller newArrival active configurableQuantityTiers quantityTiers updatedAt"
+        "name nameAr slug categorySlug description image coverImage basePrice pricingType stock colors rating reviewCount badge featured bestseller newArrival active configurableQuantityTiers quantityTiers updatedAt"
       );
     }
 

@@ -27,10 +27,27 @@ const CartItemSchema = new Schema(
       default: "",
     },
 
+    color: {
+      type: String,
+      default: "",
+    },
+
+    colorHex: {
+      type: String,
+      default: "",
+      match: /^$|^#[0-9a-fA-F]{6}$/,
+    },
+
+    pricingType: {
+      type: String,
+      enum: ["quantity", "tiered", "meter"],
+      default: "quantity",
+    },
+
     quantity: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0.01,
     },
 
     unitPrice: {

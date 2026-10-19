@@ -18,7 +18,9 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, priority }) => {
   const startingPrice = getProductStartingPriceDetails(
     product.basePrice,
-    product.configurableQuantityTiers
+    product.pricingType === 'tiered' || (!product.pricingType && product.configurableQuantityTiers?.length)
+      ? product.configurableQuantityTiers
+      : undefined
   );
 
   return (
@@ -72,7 +74,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority }) =
               <span className="text-[10px] text-slate-400 block">يبدأ من</span>
               <span className="text-lg font-black text-brand-blue">{formatCurrency(startingPrice.unitPrice)}</span>
               <span className="block text-[10px] text-slate-400">
-                {startingPrice.quantity > 1 ? `لـ ${startingPrice.quantity} قطعة` : 'للقطعة'}
+                {product.pricingType === 'meter'
+                  ? 'للمتر'
+                  : startingPrice.quantity > 1 ? `لـ ${startingPrice.quantity} قطعة` : 'للقطعة'}
               </span>
             </div>
 

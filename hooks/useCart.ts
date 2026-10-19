@@ -60,21 +60,42 @@ export function useCart() {
   };
 
   const addItem = (newItem: CartItem) => {
+    const currentProductQuantity = items
+      .filter((item) => item.productId === newItem.productId)
+      .reduce((total, item) => total + item.quantity, 0);
+    if (currentProductQuantity + newItem.quantity > (newItem.maxStock ?? Infinity)) {
+      return false;
+    }
+
+    const isTiered = newItem.pricingType === 'tiered';
     const existingIndex = items.findIndex(
       (item) =>
+        !isTiered &&
+        item.pricingType !== 'tiered' &&
         item.productId === newItem.productId &&
         item.size === newItem.size &&
-        item.material === newItem.material
+        item.material === newItem.material &&
+        item.color === newItem.color &&
+        item.pricingType === newItem.pricingType
     );
 
     if (existingIndex > -1) {
       const updated = [...items];
-      updated[existingIndex].quantity += newItem.quantity;
-      updated[existingIndex].totalPrice = updated[existingIndex].quantity * updated[existingIndex].unitPrice;
+      const nextQuantity = updated[existingIndex].quantity + newItem.quantity;
+      if (nextQuantity > (newItem.maxStock ?? updated[existingIndex].maxStock ?? Infinity)) {
+        return false;
+      }
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        quantity: nextQuantity,
+        totalPrice: Math.round(nextQuantity * updated[existingIndex].unitPrice * 100) / 100,
+      };
       saveCart(updated);
     } else {
+      if (newItem.quantity > (newItem.maxStock ?? Infinity)) return false;
       saveCart([...items, newItem]);
     }
+    return true;
   };
 
   const removeItem = (id: string) => {
@@ -86,17 +107,28 @@ export function useCart() {
       removeItem(id);
       return;
     }
+    const currentItem = items.find((item) => item.id === id);
+    if (!currentItem || currentItem.pricingType === 'tiered') return false;
+    const otherProductQuantity = items
+      .filter((item) => item.productId === currentItem.productId && item.id !== id)
+      .reduce((total, item) => total + item.quantity, 0);
+    if (otherProductQuantity + quantity > (currentItem.maxStock ?? Infinity)) return false;
+
     const updated = items.map((item) => {
       if (item.id === id) {
+        if (item.pricingType === 'tiered' || quantity > (item.maxStock ?? Infinity)) {
+          return item;
+        }
         return {
           ...item,
           quantity,
-          totalPrice: quantity * item.unitPrice,
+          totalPrice: Math.round(quantity * item.unitPrice * 100) / 100,
         };
       }
       return item;
     });
     saveCart(updated);
+    return true;
   };
 
   const clearCart = () => {

@@ -26,6 +26,11 @@ const QuantityTierSchema = new Schema({
   unitPrice: { type: Number, required: true, min: 0 },
 }, { _id: false });
 
+const ProductColorSchema = new Schema({
+  label: { type: String, required: true, trim: true },
+  hex: { type: String, required: true, match: /^#[0-9a-fA-F]{6}$/ },
+}, { _id: false });
+
 const ProductSchema = new Schema({
   name: { type: String, required: true, trim: true },
   nameAr: { type: String, default: "", trim: true },
@@ -40,12 +45,15 @@ const ProductSchema = new Schema({
   videos: { type: [VideoMediaSchema], default: [] },
   coverImage: { type: String, default: "" },
   basePrice: { type: Number, required: true, min: 0 },
+  pricingType: { type: String, enum: ["quantity", "tiered", "meter"] },
+  colorSelectionMode: { type: String, enum: ["custom", "predefined"], default: "predefined" },
   designFee: { type: Number, default: 75, min: 0 },
   salePrice: { type: Number, min: 0 },
   discount: { type: Number, min: 0 },
   rating: { type: Number, default: 0, min: 0, max: 5 },
   reviewCount: { type: Number, default: 0, min: 0 },
   stock: { type: Number, default: 0, min: 0 },
+  colors: { type: [ProductColorSchema], default: [] },
   minQuantity: { type: Number, default: 1, min: 1 },
   maxQuantity: { type: Number, min: 1 },
   availableSizes: { type: [String], default: [] },
@@ -83,7 +91,7 @@ const ProductSchema = new Schema({
 
 if (
   models.Product &&
-  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee"]
+  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "colors", "colorSelectionMode"]
     .every((path) => models.Product.schema.path(path))
 ) {
   mongoose.deleteModel("Product");

@@ -10,25 +10,30 @@ interface SmartConfiguratorProps {
   product: Product;
 }
 
-function getInitialQuantity(product: Product) {
+function getInitialQuantity(product: Product, pricingType: NonNullable<Product['pricingType']>) {
   const tiers = (product.configurableQuantityTiers || [])
     .filter((tier) => Number.isFinite(tier.quantity) && tier.quantity > 0)
     .sort((a, b) => a.quantity - b.quantity);
 
-  if (tiers.length > 0) {
+  if (pricingType === 'tiered' && tiers.length > 0) {
     return tiers[0].quantity;
   }
 
-  if (product.quantityTiers && product.quantityTiers.length > 0) {
+  if (!product.pricingType && product.quantityTiers && product.quantityTiers.length > 0) {
     const sorted = [...product.quantityTiers].filter((q) => q > 0).sort((a, b) => a - b);
     return sorted[0] || Math.max(1, Number(product.minQuantity) || 1);
   }
 
-  return Math.max(1, Number(product.minQuantity) || 1);
+  const initial = Math.max(pricingType === 'meter' ? 0.01 : 1, Number(product.minQuantity) || 1);
+  return Math.min(initial, Number(product.stock) || initial);
 }
 
 export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product }) => {
   const { addItem } = useCart();
+  const pricingType = product.pricingType || (
+    product.configurableQuantityTiers?.length || product.quantityTiers?.length ? 'tiered' : 'quantity'
+  );
+  const maxAvailable = Math.min(Number(product.stock) || 0, Number(product.maxQuantity) || Infinity);
 
   const materialOptions = product.configurableMaterials?.length
     ? product.configurableMaterials.map((option) => option.label)
@@ -39,7 +44,10 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
 
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || 'قياسي');
   const [selectedMaterial, setSelectedMaterial] = useState(materialOptions[0] || 'افتراضي');
-  const [quantity, setQuantity] = useState(() => getInitialQuantity(product));
+  const [quantity, setQuantity] = useState(() => getInitialQuantity(product, pricingType));
+  const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.label || '');
+  const [customColorHex, setCustomColorHex] = useState('#000000');
+  const [cartError, setCartError] = useState('');
   const finishOptions = (product.configurableFinishes || [])
     .filter((finish) => finish.label && finish.label.trim() !== '')
     .map((finish) => ({
@@ -57,13 +65,13 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [needDesign, setNeedDesign] = useState(false);
   const [designBrief, setDesignBrief] = useState('');
 
-  const hasConfigurableTiers = Boolean(
-    product.configurableQuantityTiers && product.configurableQuantityTiers.length > 0
+  const hasConfigurableTiers = pricingType === 'tiered' && Boolean(
+    product.configurableQuantityTiers?.length || product.quantityTiers?.length
   );
   const matchingTier = product.configurableQuantityTiers?.find((t) => t.quantity === quantity);
-  const basePriceForQuantity = matchingTier
-    ? matchingTier.unitPrice
-    : (product.basePrice ?? 0) * (hasConfigurableTiers ? 1 : quantity);
+  const basePriceForQuantity = pricingType === 'tiered'
+    ? matchingTier?.unitPrice ?? (product.basePrice ?? 0)
+    : (product.basePrice ?? 0) * quantity;
 
   const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
   const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
@@ -77,33 +85,55 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE;
   const totalCalculatedPrice = Math.max(0, basePriceForQuantity + addOnPrice);
   const unitCalculatedPrice = Math.round((totalCalculatedPrice / Math.max(1, quantity)) * 100) / 100;
+  const selectedPredefinedColor = product.colors?.find((color) => color.label === selectedColor);
+  const chosenColorHex = product.colorSelectionMode === 'custom' ? customColorHex : selectedPredefinedColor?.hex;
   const quantityOptions = hasConfigurableTiers
-    ? product.configurableQuantityTiers!
+    ? product.configurableQuantityTiers?.length
+      ? product.configurableQuantityTiers
         .filter((tier) => Number.isFinite(tier.quantity) && tier.quantity > 0)
+        .filter((tier) => tier.quantity <= maxAvailable)
         .sort((a, b) => a.quantity - b.quantity)
         .map((tier) => tier.quantity)
-    : (product.quantityTiers?.length
-        ? [...new Set(product.quantityTiers)].filter((q) => Number.isFinite(q) && q > 0).sort((a, b) => a - b)
-        : [100, 250, 500, 1000, 2500]);
+      : [...new Set(product.quantityTiers || [])]
+        .filter((q) => Number.isFinite(q) && q > 0 && q <= maxAvailable)
+        .sort((a, b) => a - b)
+    : [];
 
 
   const handleAddToCart = () => {
-    addItem({
+    setCartError('');
+    const added = addItem({
       id: 'item-' + Date.now(),
       productId: product.id,
       productName: product.name,
       image: product.image,
       size: selectedSize,
       material: selectedMaterial,
+      color: product.colorSelectionMode === 'custom' ? customColorHex : selectedColor,
+      colorHex: chosenColorHex,
+      pricingType,
       quantity,
+      maxStock: maxAvailable,
       unitPrice: unitCalculatedPrice,
       totalPrice: totalCalculatedPrice,
       customNotes,
       fileUrl: fileUploaded || undefined,
     });
 
+    if (!added) {
+      setCartError('الكمية المطلوبة تتجاوز المخزون المتاح. قللي الكمية أو راجعي السلة.');
+      return;
+    }
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2500);
+  };
+
+  const updateEnteredQuantity = (value: string) => {
+    const nextQuantity = Number(value);
+    const minimum = pricingType === 'meter' ? 0.01 : Math.max(1, Number(product.minQuantity) || 1);
+    if (Number.isFinite(nextQuantity) && nextQuantity >= minimum) {
+      setQuantity(Math.min(nextQuantity, maxAvailable));
+    }
   };
 
   return (
@@ -176,11 +206,50 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
         </div>
       )}
 
+      {product.colorSelectionMode === 'custom' ? (
+        <div>
+          <label className="text-xs font-bold text-slate-700 block mb-2">اختاري أي لون من لوحة الألوان</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              aria-label="اختيار أي لون"
+              value={customColorHex}
+              onChange={(event) => setCustomColorHex(event.target.value)}
+              className="h-12 w-16 cursor-pointer rounded-xl border border-slate-200 bg-white p-1"
+            />
+            <span className="text-xs font-bold uppercase text-slate-600">{customColorHex}</span>
+          </div>
+        </div>
+      ) : product.colors && product.colors.length > 0 ? (
+        <div>
+          <label className="text-xs font-bold text-slate-700 block mb-2">اختر اللون</label>
+          <div className="flex flex-wrap gap-3">
+            {product.colors.map((color) => (
+              <button
+                key={`${color.label}-${color.hex}`}
+                type="button"
+                onClick={() => setSelectedColor(color.label)}
+                aria-label={`اختيار اللون ${color.label}`}
+                aria-pressed={selectedColor === color.label}
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                  selectedColor === color.label
+                    ? 'border-brand-blue bg-blue-50 text-brand-blue ring-2 ring-blue-100'
+                    : 'border-slate-200 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <span className="h-5 w-5 rounded-full border border-black/15" style={{ backgroundColor: color.hex }} />
+                {color.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {/* الخطوة 3: الكمية */}
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            3. الكمية
+            3. {pricingType === 'meter' ? 'الطول بالمتر' : 'الكمية'}
           </label>
           {matchingTier && (
             <span className="text-xs text-amber-600 font-bold">
@@ -188,8 +257,13 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
             </span>
           )}
         </div>
+        <p className={`mb-3 text-xs font-bold ${maxAvailable > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+          {maxAvailable > 0
+            ? `المتاح في المخزون: ${maxAvailable} ${pricingType === 'meter' ? 'متر' : 'قطعة'}`
+            : 'نفدت الكمية حالياً'}
+        </p>
         <div className="flex flex-wrap items-center gap-3">
-          {quantityOptions.map((q) => {
+          {pricingType === 'tiered' && quantityOptions.map((q) => {
             const tier = product.configurableQuantityTiers?.find((item) => item.quantity === q);
             return (
               <button
@@ -211,13 +285,19 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
               </button>
             );
           })}
-          {!hasConfigurableTiers && (
+          {pricingType !== 'tiered' && (
             <input
               type="number"
+              min={pricingType === 'meter' ? '0.01' : Math.max(1, Number(product.minQuantity) || 1)}
+              max={maxAvailable}
+              step={pricingType === 'meter' ? '0.01' : '1'}
               value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => updateEnteredQuantity(e.target.value)}
               className="w-24 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-brand-blue text-center font-bold"
             />
+          )}
+          {pricingType === 'tiered' && !quantityOptions.length && maxAvailable > 0 && (
+            <p className="text-xs font-semibold text-rose-600">لا توجد شريحة كمية متاحة ضمن المخزون الحالي.</p>
           )}
         </div>
       </div>
@@ -359,7 +439,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       </span>
 
       <span className="text-xs text-slate-300">
-        ({formatCurrency(unitCalculatedPrice)} / للقطعة)
+        ({formatCurrency(unitCalculatedPrice)} / {pricingType === 'meter' ? 'للمتر' : 'للقطعة'})
       </span>
     </div>
 
@@ -368,11 +448,13 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     </span>
 
   </div>
+  {cartError && <p role="alert" className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs font-bold text-rose-700">{cartError}</p>}
 
   <Button
     size="lg"
     variant="yellow"
     onClick={handleAddToCart}
+    disabled={maxAvailable <= 0 || (pricingType === 'tiered' && !quantityOptions.includes(quantity))}
     className="w-full sm:w-auto text-slate-950 font-black"
   >
     {isAdded ? '✓ تم الإضافة إلى السلة!' : 'إضافة المنتج المخصص إلى السلة'}
