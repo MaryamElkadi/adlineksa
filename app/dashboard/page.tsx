@@ -10,6 +10,12 @@ interface OrderItem {
   image?: string;
   size?: string;
   material?: string;
+  color?: string;
+  designPlacement?: string;
+  printSide?: string;
+  installation?: boolean;
+  finish?: string;
+  designBrief?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -477,6 +483,12 @@ export default function DashboardPage() {
               </div>
               {item.size && <div className="text-slate-500 font-normal">المقاس: {item.size}</div>}
               {item.material && <div className="text-slate-500 font-normal">المادة: {item.material}</div>}
+              {item.color && <div className="text-slate-500 font-normal">اللون: {item.color}</div>}
+              {item.designPlacement && <div className="text-slate-500 font-normal">مكان التصميم: {item.designPlacement}</div>}
+              {item.printSide && <div className="text-slate-500 font-normal">وجه الطباعة: {item.printSide}</div>}
+              {item.installation && <div className="text-cyan-700 font-normal">مع خدمة التركيب</div>}
+              {item.finish && <div className="text-slate-500 font-normal">التشطيب: {item.finish}</div>}
+              {item.designBrief && <div className="text-slate-500 font-normal">تفاصيل التصميم: {item.designBrief}</div>}
               {item.customNotes && <div className="text-slate-500 font-normal text-xs">ملاحظات: {item.customNotes}</div>}
             </div>
           ))}

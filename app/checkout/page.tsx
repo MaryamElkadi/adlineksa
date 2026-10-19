@@ -190,6 +190,9 @@ export default function CheckoutPage() {
                         {it.size}
                       </span>
                     )}
+                    {it.designPlacement && <span className="text-[10px] font-semibold text-cyan-800 bg-cyan-50 rounded-md px-1.5 py-0.5">{it.designPlacement}</span>}
+                    {it.printSide && <span className="text-[10px] font-semibold text-slate-600 bg-slate-50 rounded-md px-1.5 py-0.5">{it.printSide}</span>}
+                    {it.installation && <span className="text-[10px] font-semibold text-cyan-800 bg-cyan-50 rounded-md px-1.5 py-0.5">مع تركيب</span>}
                     {it.material && (
                       <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">
                         {it.material}
@@ -207,6 +210,9 @@ export default function CheckoutPage() {
                       </span>
                     )}
                   </div>
+                )}
+                {it.designBrief && (
+                  <p className="text-[10px] text-slate-500">تفاصيل التصميم: {it.designBrief}</p>
                 )}
 
                 {/* Quantity controls & price */}

@@ -12,14 +12,14 @@ export function formatCurrency(amount: number, currency = 'SAR'): string {
 
 export function getProductStartingPrice(
   basePrice: number,
-  quantityTiers?: { quantity: number; unitPrice: number }[]
+  quantityTiers?: { quantity: number; unitPrice: number; discountPercent?: number }[]
 ): number {
   return getProductStartingPriceDetails(basePrice, quantityTiers).unitPrice;
 }
 
 export function getProductStartingPriceDetails(
   basePrice: number,
-  quantityTiers?: { quantity: number; unitPrice: number }[]
+  quantityTiers?: { quantity: number; unitPrice: number; discountPercent?: number }[]
 ): { quantity: number; unitPrice: number } {
   const validTiers = (quantityTiers || [])
     .filter(({ quantity, unitPrice }) =>
@@ -28,6 +28,10 @@ export function getProductStartingPriceDetails(
       Number.isFinite(unitPrice) &&
       unitPrice > 0
     )
+    .map((tier) => ({
+      ...tier,
+      unitPrice: tier.unitPrice * (1 - Math.min(100, Math.max(0, tier.discountPercent || 0)) / 100),
+    }))
     .sort((a, b) => a.unitPrice - b.unitPrice || a.quantity - b.quantity);
 
   if (validTiers.length > 0) {

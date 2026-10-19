@@ -85,6 +85,10 @@ export default function CartPage() {
                           <span className="text-slate-700">{item.color}</span>
                         </p>
                       )}
+                      {item.designPlacement && <p>مكان التصميم: <span className="text-slate-700">{item.designPlacement}</span></p>}
+                      {item.printSide && <p>وجه الطباعة: <span className="text-slate-700">{item.printSide}</span></p>}
+                      {item.installation && <p className="text-cyan-700 font-bold">مع خدمة التركيب</p>}
+                      {item.finish && <p>التشطيب: <span className="text-slate-700">{item.finish}</span></p>}
                       <p>
                         {item.pricingType === 'meter' ? 'التسعير: بالمتر' : item.pricingType === 'tiered' ? 'التسعير: شريحة كمية' : 'التسعير: بالقطعة'}
                       </p>
@@ -92,6 +96,9 @@ export default function CartPage() {
                         <p className="text-amber-600 font-semibold flex items-center gap-1 mt-1">
                           📎 الملف المرفق: <span className="underline">{item.fileUrl}</span>
                         </p>
+                      )}
+                      {item.designBrief && (
+                        <p>تفاصيل التصميم: <span className="text-slate-700">{item.designBrief}</span></p>
                       )}
                     </div>
                   </div>

@@ -201,7 +201,7 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     const products = await Product.find({ _id: { $in: [...requestedQuantities.keys()] } })
-      .select("pricingType configurableQuantityTiers quantityTiers minQuantity maxQuantity colorSelectionMode colors active")
+      .select("pricingType basePrice configurableQuantityTiers quantityTiers minQuantity maxQuantity colorSelectionMode colors configurableDesignPlacements configurablePrintSides installationAvailable installationFee designFee configurableMaterials configurableSizes configurableFinishes active")
       .lean();
     const productsById = new Map(products.map((product) => [String(product._id), product]));
 
@@ -221,8 +221,9 @@ export async function POST(request: Request) {
 
       if (
         pricingType === "tiered" &&
-        !(product.configurableQuantityTiers || []).some((tier: { quantity: number }) => tier.quantity === item.quantity) &&
-        !(product.quantityTiers || []).includes(item.quantity)
+        (product.configurableQuantityTiers?.length
+          ? !product.configurableQuantityTiers.some((tier: { quantity: number }) => tier.quantity === item.quantity)
+          : !(product.quantityTiers || []).includes(item.quantity))
       ) {
         return NextResponse.json({ message: "اختاري إحدى شرائح الكمية المتاحة لهذا المنتج." }, { status: 400 });
       }
@@ -246,6 +247,45 @@ export async function POST(request: Request) {
       ) {
         return NextResponse.json({ message: "اختاري لوناً متاحاً لهذا المنتج." }, { status: 400 });
       }
+
+      if (
+        product.configurableDesignPlacements?.length &&
+        !product.configurableDesignPlacements.some((option: { label: string }) => option.label === item.designPlacement)
+      ) {
+        return NextResponse.json({ message: "اختاري مكان التصميم المتاح لهذا المنتج." }, { status: 400 });
+      }
+
+      if (
+        product.configurablePrintSides?.length &&
+        !product.configurablePrintSides.some((option: { label: string }) => option.label === item.printSide)
+      ) {
+        return NextResponse.json({ message: "اختاري وجه طباعة متاحاً لهذا المنتج." }, { status: 400 });
+      }
+
+      if (
+        product.configurableMaterials?.length &&
+        !product.configurableMaterials.some((option: { label: string }) => option.label === item.material)
+      ) {
+        return NextResponse.json({ message: "اختاري خامة متاحة لهذا المنتج." }, { status: 400 });
+      }
+
+      if (
+        product.configurableSizes?.length &&
+        !product.configurableSizes.some((option: { label: string }) => option.label === item.size)
+      ) {
+        return NextResponse.json({ message: "اختاري مقاساً متاحاً لهذا المنتج." }, { status: 400 });
+      }
+
+      if (
+        product.configurableFinishes?.length &&
+        !product.configurableFinishes.some((option: { label: string }) => option.label === item.finish)
+      ) {
+        return NextResponse.json({ message: "اختاري تشطيباً متاحاً لهذا المنتج." }, { status: 400 });
+      }
+
+      if (item.installation && !product.installationAvailable) {
+        return NextResponse.json({ message: "خدمة التركيب غير متاحة لهذا المنتج." }, { status: 400 });
+      }
     }
 
     for (const [productId, quantity] of requestedQuantities) {
@@ -265,16 +305,58 @@ export async function POST(request: Request) {
       reservedProducts.push({ productId, quantity });
     }
 
+    const verifiedItems = body.items.map((item: {
+      productId: string;
+      quantity: number;
+      pricingType?: string;
+      needDesign?: boolean;
+      installation?: boolean;
+      designPlacement?: string;
+      finish?: string;
+      printSide?: string;
+      material?: string;
+      size?: string;
+    }) => {
+      const product = productsById.get(item.productId);
+      if (!product) throw new Error(`Product ${item.productId} disappeared during order validation.`);
+
+      const hasTiers = Boolean(product.configurableQuantityTiers?.length || product.quantityTiers?.length);
+      const pricingType = product.pricingType || (hasTiers ? "tiered" : "quantity");
+      const tier = product.configurableQuantityTiers?.find(
+        (option: { quantity: number }) => option.quantity === item.quantity
+      );
+      const tierPrice = pricingType === "tiered"
+        ? (tier?.unitPrice ?? product.basePrice ?? 0) * (1 - Math.min(100, Math.max(0, tier?.discountPercent || 0)) / 100)
+        : (product.basePrice || 0) * item.quantity;
+      const findModifier = (options: Array<{ label: string; priceModifier: number }> | undefined, label: string | undefined) =>
+        options?.find((option) => option.label === label)?.priceModifier || 0;
+      const placementFee = findModifier(product.configurableDesignPlacements, item.designPlacement);
+      const printSideFee = product.configurablePrintSides?.find(
+        (option: { label: string; priceModifier: number }) => option.label === item.printSide
+      )?.priceModifier || 0;
+      const optionFees =
+        findModifier(product.configurableMaterials, item.material) +
+        findModifier(product.configurableSizes, item.size) +
+        findModifier(product.configurableFinishes, item.finish) +
+        placementFee +
+        printSideFee +
+        (item.installation ? product.installationFee || 0 : 0) +
+        (item.needDesign ? product.designFee || 75 : 0);
+      const totalPrice = Math.round(Math.max(0, tierPrice + optionFees) * 100) / 100;
+      return {
+        ...item,
+        pricingType: item.pricingType || product.pricingType || (hasTiers ? "tiered" : "quantity"),
+        unitPrice: Math.round((totalPrice / item.quantity) * 100) / 100,
+        totalPrice,
+      };
+    });
+    const subtotal = verifiedItems.reduce((sum: number, item: { totalPrice: number }) => sum + item.totalPrice, 0);
+    const orderTotal = Math.round((subtotal + subtotal * 0.15 + (subtotal > 300 ? 0 : 35)) * 100) / 100;
+
     const order = await Order.create({
       ...body,
-      items: body.items.map((item: { productId: string; pricingType?: string }) => {
-        const product = productsById.get(item.productId);
-        const hasTiers = Boolean(product?.configurableQuantityTiers?.length || product?.quantityTiers?.length);
-        return {
-          ...item,
-          pricingType: item.pricingType || product?.pricingType || (hasTiers ? "tiered" : "quantity"),
-        };
-      }),
+      items: verifiedItems,
+      total: orderTotal,
 
       // IMPORTANT
       userId: currentUser._id,

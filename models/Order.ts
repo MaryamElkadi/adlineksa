@@ -38,6 +38,36 @@ const CartItemSchema = new Schema(
       match: /^$|^#[0-9a-fA-F]{6}$/,
     },
 
+    designPlacement: {
+      type: String,
+      default: "",
+    },
+
+    finish: {
+      type: String,
+      default: "",
+    },
+
+    printSide: {
+      type: String,
+      default: "",
+    },
+
+    installation: {
+      type: Boolean,
+      default: false,
+    },
+
+    needDesign: {
+      type: Boolean,
+      default: false,
+    },
+
+    designBrief: {
+      type: String,
+      default: "",
+    },
+
     pricingType: {
       type: String,
       enum: ["quantity", "tiered", "meter"],

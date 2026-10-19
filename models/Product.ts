@@ -24,6 +24,7 @@ const ConfigOptionSchema = new Schema({
 const QuantityTierSchema = new Schema({
   quantity: { type: Number, required: true, min: 1 },
   unitPrice: { type: Number, required: true, min: 0 },
+  discountPercent: { type: Number, default: 0, min: 0, max: 100 },
 }, { _id: false });
 
 const ProductColorSchema = new Schema({
@@ -47,6 +48,10 @@ const ProductSchema = new Schema({
   basePrice: { type: Number, required: true, min: 0 },
   pricingType: { type: String, enum: ["quantity", "tiered", "meter"] },
   colorSelectionMode: { type: String, enum: ["custom", "predefined"], default: "predefined" },
+  configurableDesignPlacements: { type: [ConfigOptionSchema], default: [] },
+  configurablePrintSides: { type: [ConfigOptionSchema], default: [] },
+  installationAvailable: { type: Boolean, default: false },
+  installationFee: { type: Number, default: 0, min: 0 },
   designFee: { type: Number, default: 75, min: 0 },
   salePrice: { type: Number, min: 0 },
   discount: { type: Number, min: 0 },
@@ -91,7 +96,7 @@ const ProductSchema = new Schema({
 
 if (
   models.Product &&
-  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "colors", "colorSelectionMode"]
+  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "colors", "colorSelectionMode", "configurableDesignPlacements", "configurablePrintSides", "installationAvailable", "installationFee"]
     .every((path) => models.Product.schema.path(path))
 ) {
   mongoose.deleteModel("Product");

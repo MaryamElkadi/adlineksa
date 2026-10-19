@@ -47,6 +47,9 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [quantity, setQuantity] = useState(() => getInitialQuantity(product, pricingType));
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.label || '');
   const [customColorHex, setCustomColorHex] = useState('#000000');
+  const [designPlacement, setDesignPlacement] = useState(product.configurableDesignPlacements?.[0]?.label || '');
+  const [printSide, setPrintSide] = useState(product.configurablePrintSides?.[0]?.label || '');
+  const [installation, setInstallation] = useState(false);
   const [cartError, setCartError] = useState('');
   const finishOptions = (product.configurableFinishes || [])
     .filter((finish) => finish.label && finish.label.trim() !== '')
@@ -69,20 +72,26 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     product.configurableQuantityTiers?.length || product.quantityTiers?.length
   );
   const matchingTier = product.configurableQuantityTiers?.find((t) => t.quantity === quantity);
+  const tierDiscount = Math.min(100, Math.max(0, matchingTier?.discountPercent || 0));
   const basePriceForQuantity = pricingType === 'tiered'
-    ? matchingTier?.unitPrice ?? (product.basePrice ?? 0)
+    ? (matchingTier?.unitPrice ?? (product.basePrice ?? 0)) * (1 - tierDiscount / 100)
     : (product.basePrice ?? 0) * quantity;
 
   const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
   const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
   const finishOption = finishOptions.find((f) => f.label === lamination);
+  const designPlacementOption = product.configurableDesignPlacements?.find((option) => option.label === designPlacement);
+  const printSideOption = product.configurablePrintSides?.find((option) => option.label === printSide);
 
   const matAddon = matOption ? matOption.priceModifier : 0;
   const sizeAddon = sizeOption ? sizeOption.priceModifier : 0;
   const finishAddon = finishOption ? finishOption.priceModifier : 0;
   const DESIGN_FEE = needDesign ? product.designFee ?? 75 : 0;
 
-  const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE;
+  const placementAddon = designPlacementOption?.priceModifier || 0;
+  const printSideAddon = printSideOption?.priceModifier || 0;
+  const installationAddon = installation ? product.installationFee || 0 : 0;
+  const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE + placementAddon + printSideAddon + installationAddon;
   const totalCalculatedPrice = Math.max(0, basePriceForQuantity + addOnPrice);
   const unitCalculatedPrice = Math.round((totalCalculatedPrice / Math.max(1, quantity)) * 100) / 100;
   const selectedPredefinedColor = product.colors?.find((color) => color.label === selectedColor);
@@ -111,6 +120,12 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       material: selectedMaterial,
       color: product.colorSelectionMode === 'custom' ? customColorHex : selectedColor,
       colorHex: chosenColorHex,
+      designPlacement,
+      finish: lamination,
+      printSide,
+      installation,
+      needDesign,
+      designBrief: needDesign ? designBrief : '',
       pricingType,
       quantity,
       maxStock: maxAvailable,
@@ -279,7 +294,13 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
                 <span className="block text-sm">{q} قطعة</span>
                 {tier && (
                   <span className="mt-0.5 block font-bold text-slate-800">
-                    {formatCurrency(tier.unitPrice)}
+                    {tier.discountPercent ? (
+                      <>
+                        <span className="ml-1 text-[10px] text-slate-400 line-through">{formatCurrency(tier.unitPrice)}</span>
+                        {formatCurrency(tier.unitPrice * (1 - Math.min(100, Math.max(0, tier.discountPercent)) / 100))}
+                        <span className="mr-1 text-[10px] text-emerald-700">خصم {tier.discountPercent}%</span>
+                      </>
+                    ) : formatCurrency(tier.unitPrice)}
                   </span>
                 )}
               </button>
@@ -301,6 +322,62 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
           )}
         </div>
       </div>
+
+      {product.configurableDesignPlacements && product.configurableDesignPlacements.length > 0 && (
+        <div>
+          <label className="text-xs font-bold text-slate-700 block mb-2">مكان التصميم</label>
+          <div className="flex flex-wrap gap-2">
+            {product.configurableDesignPlacements.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => setDesignPlacement(option.label)}
+                aria-pressed={designPlacement === option.label}
+                className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+                  designPlacement === option.label ? 'border-brand-blue bg-blue-50 text-brand-blue' : 'border-slate-200 text-slate-600'
+                }`}
+              >
+                {option.label}
+                {option.priceModifier > 0 && <span className="mr-1 text-amber-700">+{formatCurrency(option.priceModifier)}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {product.configurablePrintSides && product.configurablePrintSides.length > 0 && (
+        <div>
+          <label htmlFor="print-side" className="text-xs font-bold text-slate-700 block mb-2">وجه الطباعة</label>
+          <select
+            id="print-side"
+            value={printSide}
+            onChange={(event) => setPrintSide(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+          >
+            {product.configurablePrintSides.map((option) => (
+              <option key={option.label} value={option.label}>
+                {option.label}{option.priceModifier > 0 ? ` (+${formatCurrency(option.priceModifier)})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {product.installationAvailable && (
+        <fieldset className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+          <legend className="px-1 text-xs font-bold text-slate-800">خدمة التركيب</legend>
+          <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-700">
+            <label className="flex items-center gap-2">
+              <input type="radio" name={`installation-${product.id}`} checked={installation} onChange={() => setInstallation(true)} className="accent-cyan-600" />
+              مع تركيب {product.installationFee !== undefined ? `(يبدأ من ${formatCurrency(product.installationFee)})` : ''}
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="radio" name={`installation-${product.id}`} checked={!installation} onChange={() => setInstallation(false)} className="accent-cyan-600" />
+              بدون تركيب
+            </label>
+          </div>
+        </fieldset>
+      )}
 
       {/* الخطوة 4: التغليف / اللمسات الأخيرة */}
       {finishOptions.length > 0 && (

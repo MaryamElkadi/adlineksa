@@ -6,10 +6,11 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  size?: 'default' | 'large';
   children: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, size = 'default', children }: ModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -31,7 +32,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       {/* Modal Container */}
       <div 
         dir="rtl"
-        className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+        className={`relative w-full ${size === 'large' ? 'max-w-6xl max-h-[95vh]' : 'max-w-lg'} bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200 flex flex-col`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-amber-50/60 to-white">
@@ -47,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         </div>
 
         {/* Content Body */}
-        <div className="p-6 text-slate-800">
+        <div className={`p-6 text-slate-800 ${size === 'large' ? 'overflow-y-auto min-h-0' : ''}`}>
           {children}
         </div>
       </div>

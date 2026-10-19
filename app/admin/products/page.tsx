@@ -19,6 +19,8 @@ interface ProductFormState extends Partial<Product> {
   finishesList: ConfigOption[];
   quantitiesList: QuantityTier[];
   colorsList: ProductColor[];
+  designPlacementsList: ConfigOption[];
+  printSidesList: ConfigOption[];
   colorSelectionMode: 'custom' | 'predefined';
   images: ImageMedia[];
   videos: VideoMedia[];
@@ -75,6 +77,10 @@ const initialFormState: ProductFormState = {
   quantitiesList: [],
   colorsList: [],
   colorSelectionMode: 'predefined',
+  designPlacementsList: [],
+  printSidesList: [],
+  installationAvailable: false,
+  installationFee: 0,
   seoTitle: '',
   seoDescription: '',
 };
@@ -147,6 +153,10 @@ export default function AdminProductsPage() {
           : (fullProduct.quantityTiers || []).map((q) => ({ quantity: q, unitPrice: fullProduct.basePrice || 0 })),
         colorsList: fullProduct.colors || [],
         colorSelectionMode: fullProduct.colorSelectionMode || 'predefined',
+        designPlacementsList: fullProduct.configurableDesignPlacements || [],
+        printSidesList: fullProduct.configurablePrintSides || [],
+        installationAvailable: fullProduct.installationAvailable || false,
+        installationFee: fullProduct.installationFee || 0,
         pricingType: fullProduct.pricingType || (fullProduct.configurableQuantityTiers?.length || fullProduct.quantityTiers?.length ? 'tiered' : 'quantity'),
       });
       setIsModalOpen(true);
@@ -156,14 +166,14 @@ export default function AdminProductsPage() {
   };
 
   // Option Handlers
-  const handleAddOption = (key: 'materialsList' | 'sizesList' | 'finishesList') => {
+  const handleAddOption = (key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList') => {
     setFormData((prev) => ({
       ...prev,
       [key]: [...(prev[key] || []), { label: '', priceModifier: 0 }],
     }));
   };
 
-  const handleRemoveOption = (key: 'materialsList' | 'sizesList' | 'finishesList', index: number) => {
+  const handleRemoveOption = (key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList', index: number) => {
     setFormData((prev) => ({
       ...prev,
       [key]: (prev[key] || []).filter((_, i) => i !== index),
@@ -171,7 +181,7 @@ export default function AdminProductsPage() {
   };
 
   const handleOptionChange = (
-    key: 'materialsList' | 'sizesList' | 'finishesList',
+    key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList',
     index: number,
     field: 'label' | 'priceModifier',
     value: string | number
@@ -198,7 +208,7 @@ export default function AdminProductsPage() {
     }));
   };
 
-  const handleQuantityChange = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
+  const handleQuantityChange = (index: number, field: 'quantity' | 'unitPrice' | 'discountPercent', value: number) => {
     setFormData((prev) => {
       const updated = [...(prev.quantitiesList || [])];
       updated[index] = { ...updated[index], [field]: value };
@@ -231,9 +241,12 @@ export default function AdminProductsPage() {
     const cleanFinishes = (formData.finishesList || []).filter((f) => f.label.trim() !== '');
     const cleanQuantities = (formData.quantitiesList || [])
       .filter((q) => Number.isInteger(q.quantity) && q.quantity > 0 && Number.isFinite(q.unitPrice) && q.unitPrice >= 0)
+      .map((q) => ({ ...q, discountPercent: Math.min(100, Math.max(0, Number(q.discountPercent) || 0)) }))
       .sort((a, b) => a.quantity - b.quantity);
     const cleanColors = (formData.colorsList || [])
       .filter((color) => color.label.trim() && /^#[0-9a-fA-F]{6}$/.test(color.hex));
+    const cleanPlacements = (formData.designPlacementsList || []).filter((option) => option.label.trim());
+    const cleanPrintSides = (formData.printSidesList || []).filter((option) => option.label.trim());
     if (formData.pricingType === 'tiered' && cleanQuantities.length === 0) {
       setError('أضيفي شريحة كمية واحدة على الأقل قبل حفظ المنتج.');
       setIsSubmitting(false);
@@ -272,6 +285,10 @@ export default function AdminProductsPage() {
       configurableFinishes: cleanFinishes,
       configurableQuantityTiers: formData.pricingType === 'tiered' ? cleanQuantities : [],
       colors: formData.colorSelectionMode === 'predefined' ? cleanColors : [],
+      configurableDesignPlacements: cleanPlacements,
+      configurablePrintSides: cleanPrintSides,
+      installationAvailable: Boolean(formData.installationAvailable),
+      installationFee: Math.max(0, Number(formData.installationFee) || 0),
 
       materials: cleanMaterials.map((m) => m.label),
       availableSizes: cleanSizes.map((s) => s.label),
@@ -549,9 +566,10 @@ export default function AdminProductsPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        size="large"
         title={editingId ? '✏️ تعديل بيانات المنتج وأسعار الكميات' : '✨ إضافة منتج جديد وتحديد التسعير الذكي'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4 text-right max-h-[80vh] overflow-y-auto px-1">
+        <form onSubmit={handleSubmit} className="space-y-4 text-right px-1">
           {/* Section 1: Basic Info */}
           <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-200/60 space-y-3">
             <span className="text-xs font-black text-slate-700 block">📌 البيانات الأساسية</span>
@@ -726,9 +744,9 @@ export default function AdminProductsPage() {
                 />
               </div>
               {formData.pricingType === 'tiered' && (formData.quantitiesList || []).map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-amber-200/50">
-                  <div className="flex-1 flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">الكمية:</span>
+                <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] items-end gap-2 bg-white p-3 rounded-xl border border-amber-200/50">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600">الكمية</label>
                     <Input
                       type="number"
                       min="1"
@@ -738,23 +756,37 @@ export default function AdminProductsPage() {
                       onChange={(e) => handleQuantityChange(idx, 'quantity', Number(e.target.value))}
                     />
                   </div>
-                  <div className="flex-1 flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap">السعر (ر.س):</span>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600">السعر قبل الخصم (ر.س)</label>
                     <Input
                       type="number"
+                      min="0"
                       step="0.01"
                       placeholder="150"
                       value={item.unitPrice}
                       onChange={(e) => handleQuantityChange(idx, 'unitPrice', Number(e.target.value))}
                     />
                   </div>
-                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-1.5 rounded-lg whitespace-nowrap">
-                    السعر: {formatCurrency(item.unitPrice || 0)}
-                  </span>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600">الخصم (%)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="0"
+                      value={item.discountPercent ?? 0}
+                      onChange={(e) => handleQuantityChange(idx, 'discountPercent', Number(e.target.value))}
+                    />
+                    <span className="mt-1 block text-[10px] font-black text-emerald-700">
+                      بعد الخصم: {formatCurrency((item.unitPrice || 0) * (1 - Math.min(100, Math.max(0, item.discountPercent || 0)) / 100))}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveQuantity(idx)}
-                    className="text-rose-500 hover:bg-rose-100 p-1.5 rounded-xl text-xs font-bold"
+                    className="text-rose-500 hover:bg-rose-100 p-2 rounded-xl text-xs font-bold"
+                    aria-label="حذف شريحة الكمية"
                   >
                     ✕
                   </button>
@@ -762,6 +794,119 @@ export default function AdminProductsPage() {
               ))}
               {formData.pricingType === 'tiered' && !formData.quantitiesList?.length && (
                 <p className="text-xs font-semibold text-amber-900">أضيفي شريحة واحدة على الأقل لتفعيل هذا المنتج.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-cyan-50/60 p-4 rounded-2xl border border-cyan-200/70 space-y-4">
+            <div className="border-b border-cyan-200 pb-2">
+              <span className="text-xs font-black text-cyan-950 block">🖨️ خيارات تنفيذ المنتج</span>
+              <p className="text-[10px] text-cyan-800">حددي أماكن التصميم، وجه الطباعة، وخيار التركيب.</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[11px] font-black text-slate-800">أماكن التصميم</label>
+                <button
+                  type="button"
+                  onClick={() => handleAddOption('designPlacementsList')}
+                  className="text-[10px] font-bold text-cyan-800 bg-cyan-100 hover:bg-cyan-200 px-2 py-1 rounded-lg"
+                >
+                  + إضافة مكان تصميم
+                </button>
+              </div>
+              {(formData.designPlacementsList || []).map((option, index) => (
+                <div key={index} className="flex items-center gap-2 mb-2">
+                  <Input
+                    placeholder="مثال: الغلاف الأمامي"
+                    value={option.label}
+                    onChange={(e) => handleOptionChange('designPlacementsList', index, 'label', e.target.value)}
+                  />
+                  <div className="w-36">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="إضافة سعر (ر.س)"
+                      value={option.priceModifier}
+                      onChange={(e) => handleOptionChange('designPlacementsList', index, 'priceModifier', Number(e.target.value))}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOption('designPlacementsList', index)}
+                    className="text-rose-500 hover:bg-rose-100 p-2 rounded-xl text-xs"
+                    aria-label="حذف مكان التصميم"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[11px] font-black text-slate-800">وجه الطباعة</label>
+                <button
+                  type="button"
+                  onClick={() => handleAddOption('printSidesList')}
+                  className="text-[10px] font-bold text-cyan-800 bg-cyan-100 hover:bg-cyan-200 px-2 py-1 rounded-lg"
+                >
+                  + إضافة وجه طباعة
+                </button>
+              </div>
+              {(formData.printSidesList || []).map((option, index) => (
+                <div key={index} className="flex items-center gap-2 mb-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="مثال: وجه واحد أو وجهين"
+                      value={option.label}
+                      onChange={(e) => handleOptionChange('printSidesList', index, 'label', e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="إضافة سعر (ر.س)"
+                      value={option.priceModifier}
+                      onChange={(e) => handleOptionChange('printSidesList', index, 'priceModifier', Number(e.target.value))}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOption('printSidesList', index)}
+                    className="text-rose-500 hover:bg-rose-100 p-2 rounded-xl text-xs"
+                    aria-label="حذف عدد النسخ"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-xl border border-cyan-100 bg-white p-3 space-y-2">
+              <label className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
+                <input
+                  type="checkbox"
+                  checked={Boolean(formData.installationAvailable)}
+                  onChange={(e) => setFormData({ ...formData, installationAvailable: e.target.checked })}
+                  className="h-4 w-4 accent-cyan-600"
+                />
+                إتاحة خدمة التركيب للعميل
+              </label>
+              {formData.installationAvailable && (
+                <div className="max-w-xs">
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">سعر التركيب يبدأ من (ر.س)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.installationFee ?? 0}
+                    onChange={(e) => setFormData({ ...formData, installationFee: Number(e.target.value) })}
+                  />
+                </div>
               )}
             </div>
           </div>

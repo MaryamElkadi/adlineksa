@@ -75,7 +75,15 @@ export function useCart() {
         item.productId === newItem.productId &&
         item.size === newItem.size &&
         item.material === newItem.material &&
+        item.finish === newItem.finish &&
         item.color === newItem.color &&
+        item.designPlacement === newItem.designPlacement &&
+        item.printSide === newItem.printSide &&
+        item.installation === newItem.installation &&
+        item.needDesign === newItem.needDesign &&
+        item.designBrief === newItem.designBrief &&
+        item.customNotes === newItem.customNotes &&
+        item.fileUrl === newItem.fileUrl &&
         item.pricingType === newItem.pricingType
     );
 

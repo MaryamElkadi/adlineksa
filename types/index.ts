@@ -49,6 +49,7 @@ export interface ConfigOption {
 export interface QuantityTier {
   quantity: number;   // e.g. 100, 250, 500
   unitPrice: number;  // Total price for this exact quantity
+  discountPercent?: number;
 }
 
 export interface ProductColor {
@@ -102,6 +103,10 @@ export interface Product {
   basePrice: number;
   pricingType?: 'quantity' | 'tiered' | 'meter';
   colorSelectionMode?: 'custom' | 'predefined';
+  configurableDesignPlacements?: ConfigOption[];
+  configurablePrintSides?: ConfigOption[];
+  installationAvailable?: boolean;
+  installationFee?: number;
   designFee?: number;
   salePrice?: number;
   discount?: number;
@@ -188,6 +193,12 @@ export interface CartItem {
   material: string;
   color?: string;
   colorHex?: string;
+  designPlacement?: string;
+  finish?: string;
+  printSide?: string;
+  installation?: boolean;
+  needDesign?: boolean;
+  designBrief?: string;
   pricingType?: 'quantity' | 'tiered' | 'meter';
   quantity: number;
   maxStock?: number;
