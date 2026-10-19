@@ -105,6 +105,7 @@ export interface Product {
   colorSelectionMode?: 'custom' | 'predefined';
   configurableDesignPlacements?: ConfigOption[];
   configurablePrintSides?: ConfigOption[];
+  configurableLighting?: ConfigOption[];
   installationAvailable?: boolean;
   installationFee?: number;
   designFee?: number;
@@ -196,6 +197,7 @@ export interface CartItem {
   designPlacement?: string;
   finish?: string;
   printSide?: string;
+  lighting?: string;
   installation?: boolean;
   needDesign?: boolean;
   designBrief?: string;
@@ -210,6 +212,7 @@ export interface CartItem {
 
 export interface UserOrder {
   id: string;
+  userId?: string;
   orderNumber: string;
   date: string;
   status: 'Pending' | 'In Production' | 'Shipped' | 'Delivered' | 'Cancelled';

@@ -13,6 +13,7 @@ interface OrderItem {
   color?: string;
   designPlacement?: string;
   printSide?: string;
+  lighting?: string;
   installation?: boolean;
   finish?: string;
   designBrief?: string;
@@ -486,6 +487,7 @@ export default function DashboardPage() {
               {item.color && <div className="text-slate-500 font-normal">اللون: {item.color}</div>}
               {item.designPlacement && <div className="text-slate-500 font-normal">مكان التصميم: {item.designPlacement}</div>}
               {item.printSide && <div className="text-slate-500 font-normal">وجه الطباعة: {item.printSide}</div>}
+              {item.lighting && <div className="text-amber-700 font-normal">الإضاءة: {item.lighting}</div>}
               {item.installation && <div className="text-cyan-700 font-normal">مع خدمة التركيب</div>}
               {item.finish && <div className="text-slate-500 font-normal">التشطيب: {item.finish}</div>}
               {item.designBrief && <div className="text-slate-500 font-normal">تفاصيل التصميم: {item.designBrief}</div>}

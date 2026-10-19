@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, LayoutDashboard, User, LogOut, Home, Menu } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, User, LogOut, Home, Menu, Search } from 'lucide-react';
 
 import { useCart } from '@/hooks/useCart';
 import { MobileMenu } from './MobileMenu';
@@ -14,6 +14,8 @@ export const Navbar: React.FC = () => {
   const router = useRouter();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<any>(null);
 
   // Function to sync user state from localStorage
@@ -65,6 +67,14 @@ export const Navbar: React.FC = () => {
     router.push('/');
   };
 
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    setMobileSearchOpen(false);
+    router.push(`/products?search=${encodeURIComponent(query)}`);
+  };
+
   return (
     <>
       <header
@@ -103,13 +113,35 @@ export const Navbar: React.FC = () => {
             <Link href="/products" className="hover:text-slate-900 transition-colors">المنتجات</Link>
             <Link href="/services" className="hover:text-slate-900 transition-colors">الخدمات</Link>
             <Link href="/exhibitions" className="hover:text-slate-900 transition-colors">تنظيم معارض</Link>
-            <Link href="/about" className="hover:text-slate-900 transition-colors">من نحن</Link>
             <Link href="/contact" className="hover:text-slate-900 transition-colors">اتصل بنا</Link>
             <Link href="/quote" className="text-amber-600 hover:text-amber-700 font-bold transition-colors">طلب عرض سعر</Link>
           </nav>
 
+          <form onSubmit={submitSearch} className="hidden xl:flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="ابحث عن منتج..."
+              aria-label="ابحث عن منتج"
+              className="w-36 bg-transparent text-xs text-slate-800 outline-none placeholder:text-slate-400"
+            />
+            <button type="submit" aria-label="بحث" className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-brand-blue">
+              <Search className="h-4 w-4" />
+            </button>
+          </form>
+
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen((open) => !open)}
+              className="xl:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200"
+              aria-label="افتح البحث"
+              aria-expanded={mobileSearchOpen}
+            >
+              <Search className="w-4 h-4" />
+            </button>
 
             {/* Cart */}
             <Link
@@ -183,6 +215,23 @@ export const Navbar: React.FC = () => {
 
           </div>
         </div>
+        {mobileSearchOpen && (
+          <form onSubmit={submitSearch} className="xl:hidden px-4 pb-3 sm:px-6">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <Search className="h-4 w-4 shrink-0 text-slate-500" />
+              <input
+                type="search"
+                autoFocus
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="ابحث عن منتج..."
+                aria-label="ابحث عن منتج"
+                className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              />
+              <button type="submit" className="text-xs font-bold text-brand-blue">بحث</button>
+            </div>
+          </form>
+        )}
       </header>
 
       <MobileMenu

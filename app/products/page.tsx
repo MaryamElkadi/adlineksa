@@ -13,10 +13,15 @@ const PAGE_SIZE = 12;
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams?.get('category') || undefined;
+  const searchParam = searchParams?.get('search') || '';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchState, setSearchState] = useState(() => ({
+    searchParam,
+    value: searchParam,
+  }));
+  const searchQuery = searchState.searchParam === searchParam ? searchState.value : searchParam;
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -123,7 +128,7 @@ export default function ProductsPage() {
           <Input
             placeholder="البحث عن المنتجات..."
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => setSearchState({ searchParam, value: event.target.value })}
           />
         </div>
       </div>

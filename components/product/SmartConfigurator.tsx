@@ -49,6 +49,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const [customColorHex, setCustomColorHex] = useState('#000000');
   const [designPlacement, setDesignPlacement] = useState(product.configurableDesignPlacements?.[0]?.label || '');
   const [printSide, setPrintSide] = useState(product.configurablePrintSides?.[0]?.label || '');
+  const [lighting, setLighting] = useState(product.configurableLighting?.[0]?.label || '');
   const [installation, setInstallation] = useState(false);
   const [cartError, setCartError] = useState('');
   const finishOptions = (product.configurableFinishes || [])
@@ -82,6 +83,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const finishOption = finishOptions.find((f) => f.label === lamination);
   const designPlacementOption = product.configurableDesignPlacements?.find((option) => option.label === designPlacement);
   const printSideOption = product.configurablePrintSides?.find((option) => option.label === printSide);
+  const lightingOption = product.configurableLighting?.find((option) => option.label === lighting);
 
   const matAddon = matOption ? matOption.priceModifier : 0;
   const sizeAddon = sizeOption ? sizeOption.priceModifier : 0;
@@ -90,8 +92,9 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
 
   const placementAddon = designPlacementOption?.priceModifier || 0;
   const printSideAddon = printSideOption?.priceModifier || 0;
+  const lightingAddon = lightingOption?.priceModifier || 0;
   const installationAddon = installation ? product.installationFee || 0 : 0;
-  const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE + placementAddon + printSideAddon + installationAddon;
+  const addOnPrice = matAddon + sizeAddon + finishAddon + DESIGN_FEE + placementAddon + printSideAddon + lightingAddon + installationAddon;
   const totalCalculatedPrice = Math.max(0, basePriceForQuantity + addOnPrice);
   const unitCalculatedPrice = Math.round((totalCalculatedPrice / Math.max(1, quantity)) * 100) / 100;
   const selectedPredefinedColor = product.colors?.find((color) => color.label === selectedColor);
@@ -123,6 +126,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       designPlacement,
       finish: lamination,
       printSide,
+      lighting,
       installation,
       needDesign,
       designBrief: needDesign ? designBrief : '',
@@ -377,6 +381,24 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
             </label>
           </div>
         </fieldset>
+      )}
+
+      {product.configurableLighting && product.configurableLighting.length > 0 && (
+        <div>
+          <label htmlFor="product-lighting" className="text-xs font-bold text-slate-700 block mb-2">اختيار الإضاءة</label>
+          <select
+            id="product-lighting"
+            value={lighting}
+            onChange={(event) => setLighting(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+          >
+            {product.configurableLighting.map((option) => (
+              <option key={option.label} value={option.label}>
+                {option.label}{option.priceModifier > 0 ? ` (+${formatCurrency(option.priceModifier)})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
       {/* الخطوة 4: التغليف / اللمسات الأخيرة */}

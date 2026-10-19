@@ -50,6 +50,7 @@ const ProductSchema = new Schema({
   colorSelectionMode: { type: String, enum: ["custom", "predefined"], default: "predefined" },
   configurableDesignPlacements: { type: [ConfigOptionSchema], default: [] },
   configurablePrintSides: { type: [ConfigOptionSchema], default: [] },
+  configurableLighting: { type: [ConfigOptionSchema], default: [] },
   installationAvailable: { type: Boolean, default: false },
   installationFee: { type: Number, default: 0, min: 0 },
   designFee: { type: Number, default: 75, min: 0 },
@@ -96,7 +97,7 @@ const ProductSchema = new Schema({
 
 if (
   models.Product &&
-  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "colors", "colorSelectionMode", "configurableDesignPlacements", "configurablePrintSides", "installationAvailable", "installationFee"]
+  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "colors", "colorSelectionMode", "configurableDesignPlacements", "configurablePrintSides", "configurableLighting", "installationAvailable", "installationFee"]
     .every((path) => models.Product.schema.path(path))
 ) {
   mongoose.deleteModel("Product");

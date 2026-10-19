@@ -79,6 +79,7 @@ export function useCart() {
         item.color === newItem.color &&
         item.designPlacement === newItem.designPlacement &&
         item.printSide === newItem.printSide &&
+        item.lighting === newItem.lighting &&
         item.installation === newItem.installation &&
         item.needDesign === newItem.needDesign &&
         item.designBrief === newItem.designBrief &&

@@ -142,18 +142,11 @@ export async function GET(request: Request) {
   }
 }
 
-// CREATE ORDER FOR CURRENT USER
+// Create an order for either a signed-in user or a guest.
 export async function POST(request: Request) {
   const reservedProducts: Array<{ productId: string; quantity: number }> = [];
   try {
     const currentUser = await getCurrentUser();
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
 
     const body = await request.json();
 
@@ -162,10 +155,14 @@ export async function POST(request: Request) {
       typeof body !== "object" ||
       !Array.isArray(body.items) ||
       !body.items.length ||
-      !body.customer?.fullName ||
-      !body.customer?.email ||
-      !body.customer?.phone ||
-      !body.shippingAddress ||
+      typeof body.customer?.fullName !== "string" ||
+      !body.customer.fullName.trim() ||
+      typeof body.customer?.email !== "string" ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.customer.email.trim()) ||
+      typeof body.customer?.phone !== "string" ||
+      !body.customer.phone.trim() ||
+      typeof body.shippingAddress !== "string" ||
+      !body.shippingAddress.trim() ||
       !body.paymentMethod
     ) {
       return NextResponse.json(
@@ -201,7 +198,7 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     const products = await Product.find({ _id: { $in: [...requestedQuantities.keys()] } })
-      .select("pricingType basePrice configurableQuantityTiers quantityTiers minQuantity maxQuantity colorSelectionMode colors configurableDesignPlacements configurablePrintSides installationAvailable installationFee designFee configurableMaterials configurableSizes configurableFinishes active")
+      .select("pricingType basePrice configurableQuantityTiers quantityTiers minQuantity maxQuantity colorSelectionMode colors configurableDesignPlacements configurablePrintSides configurableLighting installationAvailable installationFee designFee configurableMaterials configurableSizes configurableFinishes active")
       .lean();
     const productsById = new Map(products.map((product) => [String(product._id), product]));
 
@@ -263,6 +260,13 @@ export async function POST(request: Request) {
       }
 
       if (
+        product.configurableLighting?.length &&
+        !product.configurableLighting.some((option: { label: string }) => option.label === item.lighting)
+      ) {
+        return NextResponse.json({ message: "اختاري إضاءة متاحة لهذا المنتج." }, { status: 400 });
+      }
+
+      if (
         product.configurableMaterials?.length &&
         !product.configurableMaterials.some((option: { label: string }) => option.label === item.material)
       ) {
@@ -314,6 +318,7 @@ export async function POST(request: Request) {
       designPlacement?: string;
       finish?: string;
       printSide?: string;
+      lighting?: string;
       material?: string;
       size?: string;
     }) => {
@@ -334,12 +339,14 @@ export async function POST(request: Request) {
       const printSideFee = product.configurablePrintSides?.find(
         (option: { label: string; priceModifier: number }) => option.label === item.printSide
       )?.priceModifier || 0;
+      const lightingFee = findModifier(product.configurableLighting, item.lighting);
       const optionFees =
         findModifier(product.configurableMaterials, item.material) +
         findModifier(product.configurableSizes, item.size) +
         findModifier(product.configurableFinishes, item.finish) +
         placementFee +
         printSideFee +
+        lightingFee +
         (item.installation ? product.installationFee || 0 : 0) +
         (item.needDesign ? product.designFee || 75 : 0);
       const totalPrice = Math.round(Math.max(0, tierPrice + optionFees) * 100) / 100;
@@ -359,7 +366,7 @@ export async function POST(request: Request) {
       total: orderTotal,
 
       // IMPORTANT
-      userId: currentUser._id,
+      ...(currentUser ? { userId: currentUser._id } : {}),
 
       orderNumber: `ADL-${Date.now()
         .toString()

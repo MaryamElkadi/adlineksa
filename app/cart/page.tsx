@@ -87,6 +87,7 @@ export default function CartPage() {
                       )}
                       {item.designPlacement && <p>مكان التصميم: <span className="text-slate-700">{item.designPlacement}</span></p>}
                       {item.printSide && <p>وجه الطباعة: <span className="text-slate-700">{item.printSide}</span></p>}
+                      {item.lighting && <p>الإضاءة: <span className="text-slate-700">{item.lighting}</span></p>}
                       {item.installation && <p className="text-cyan-700 font-bold">مع خدمة التركيب</p>}
                       {item.finish && <p>التشطيب: <span className="text-slate-700">{item.finish}</span></p>}
                       <p>

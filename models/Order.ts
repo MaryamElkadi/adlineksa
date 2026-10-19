@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose";
 
 const CartItemSchema = new Schema(
   {
@@ -49,6 +49,11 @@ const CartItemSchema = new Schema(
     },
 
     printSide: {
+      type: String,
+      default: "",
+    },
+
+    lighting: {
       type: String,
       default: "",
     },
@@ -109,12 +114,10 @@ const CartItemSchema = new Schema(
 
 const OrderSchema = new Schema(
   {
-    // IMPORTANT
-    // This connects the order to the logged-in user
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
       index: true,
     },
 
@@ -206,5 +209,13 @@ const OrderSchema = new Schema(
 OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ createdAt: -1 });
+
+if (
+  models.Order &&
+  (!models.Order.schema.path("items.lighting") ||
+    models.Order.schema.path("userId")?.isRequired)
+) {
+  mongoose.deleteModel("Order");
+}
 
 export default models.Order || model("Order", OrderSchema);

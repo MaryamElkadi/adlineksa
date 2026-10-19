@@ -7,12 +7,13 @@ import { Input } from '@/components/forms/Input';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { api } from '@/services/api';
+import { UserOrder } from '@/types';
 
 export default function CheckoutPage() {
   const { items, total, subtotal, tax, shipping, clearCart, updateQuantity, removeItem } = useCart();
 
   const [paymentMethod, setPaymentMethod] = useState<'mada' | 'applepay' | 'stcpay' | 'invoice'>('mada');
-  const [orderPlaced, setOrderPlaced] = useState<any>(null);
+  const [orderPlaced, setOrderPlaced] = useState<UserOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -74,9 +75,9 @@ export default function CheckoutPage() {
         </div>
 
         <div className="flex justify-center gap-4 pt-2">
-          <Link href="/dashboard">
+          <Link href={orderPlaced.userId ? "/dashboard" : "/products"}>
             <Button variant="yellow" className="font-black !text-slate-800 bg-amber-400 hover:bg-amber-500 border-0 shadow-md">
-              الانتقال إلى لوحة التحكم ←
+              {orderPlaced.userId ? "الانتقال إلى لوحة التحكم ←" : "متابعة التسوق ←"}
             </Button>
           </Link>
         </div>
@@ -192,6 +193,7 @@ export default function CheckoutPage() {
                     )}
                     {it.designPlacement && <span className="text-[10px] font-semibold text-cyan-800 bg-cyan-50 rounded-md px-1.5 py-0.5">{it.designPlacement}</span>}
                     {it.printSide && <span className="text-[10px] font-semibold text-slate-600 bg-slate-50 rounded-md px-1.5 py-0.5">{it.printSide}</span>}
+                    {it.lighting && <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 rounded-md px-1.5 py-0.5">{it.lighting}</span>}
                     {it.installation && <span className="text-[10px] font-semibold text-cyan-800 bg-cyan-50 rounded-md px-1.5 py-0.5">مع تركيب</span>}
                     {it.material && (
                       <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">

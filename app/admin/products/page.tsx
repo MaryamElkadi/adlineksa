@@ -21,6 +21,7 @@ interface ProductFormState extends Partial<Product> {
   colorsList: ProductColor[];
   designPlacementsList: ConfigOption[];
   printSidesList: ConfigOption[];
+  lightingList: ConfigOption[];
   colorSelectionMode: 'custom' | 'predefined';
   images: ImageMedia[];
   videos: VideoMedia[];
@@ -79,6 +80,7 @@ const initialFormState: ProductFormState = {
   colorSelectionMode: 'predefined',
   designPlacementsList: [],
   printSidesList: [],
+  lightingList: [],
   installationAvailable: false,
   installationFee: 0,
   seoTitle: '',
@@ -155,6 +157,7 @@ export default function AdminProductsPage() {
         colorSelectionMode: fullProduct.colorSelectionMode || 'predefined',
         designPlacementsList: fullProduct.configurableDesignPlacements || [],
         printSidesList: fullProduct.configurablePrintSides || [],
+        lightingList: fullProduct.configurableLighting || [],
         installationAvailable: fullProduct.installationAvailable || false,
         installationFee: fullProduct.installationFee || 0,
         pricingType: fullProduct.pricingType || (fullProduct.configurableQuantityTiers?.length || fullProduct.quantityTiers?.length ? 'tiered' : 'quantity'),
@@ -166,14 +169,14 @@ export default function AdminProductsPage() {
   };
 
   // Option Handlers
-  const handleAddOption = (key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList') => {
+  const handleAddOption = (key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList' | 'lightingList') => {
     setFormData((prev) => ({
       ...prev,
       [key]: [...(prev[key] || []), { label: '', priceModifier: 0 }],
     }));
   };
 
-  const handleRemoveOption = (key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList', index: number) => {
+  const handleRemoveOption = (key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList' | 'lightingList', index: number) => {
     setFormData((prev) => ({
       ...prev,
       [key]: (prev[key] || []).filter((_, i) => i !== index),
@@ -181,7 +184,7 @@ export default function AdminProductsPage() {
   };
 
   const handleOptionChange = (
-    key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList',
+    key: 'materialsList' | 'sizesList' | 'finishesList' | 'designPlacementsList' | 'printSidesList' | 'lightingList',
     index: number,
     field: 'label' | 'priceModifier',
     value: string | number
@@ -247,6 +250,7 @@ export default function AdminProductsPage() {
       .filter((color) => color.label.trim() && /^#[0-9a-fA-F]{6}$/.test(color.hex));
     const cleanPlacements = (formData.designPlacementsList || []).filter((option) => option.label.trim());
     const cleanPrintSides = (formData.printSidesList || []).filter((option) => option.label.trim());
+    const cleanLighting = (formData.lightingList || []).filter((option) => option.label.trim());
     if (formData.pricingType === 'tiered' && cleanQuantities.length === 0) {
       setError('أضيفي شريحة كمية واحدة على الأقل قبل حفظ المنتج.');
       setIsSubmitting(false);
@@ -287,6 +291,7 @@ export default function AdminProductsPage() {
       colors: formData.colorSelectionMode === 'predefined' ? cleanColors : [],
       configurableDesignPlacements: cleanPlacements,
       configurablePrintSides: cleanPrintSides,
+      configurableLighting: cleanLighting,
       installationAvailable: Boolean(formData.installationAvailable),
       installationFee: Math.max(0, Number(formData.installationFee) || 0),
 
@@ -878,7 +883,47 @@ export default function AdminProductsPage() {
                     type="button"
                     onClick={() => handleRemoveOption('printSidesList', index)}
                     className="text-rose-500 hover:bg-rose-100 p-2 rounded-xl text-xs"
-                    aria-label="حذف عدد النسخ"
+                    aria-label="حذف خيار وجه الطباعة"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[11px] font-black text-slate-800">اختيارات الإضاءة</label>
+                <button
+                  type="button"
+                  onClick={() => handleAddOption('lightingList')}
+                  className="text-[10px] font-bold text-cyan-800 bg-cyan-100 hover:bg-cyan-200 px-2 py-1 rounded-lg"
+                >
+                  + إضافة اختيار إضاءة
+                </button>
+              </div>
+              {(formData.lightingList || []).map((option, index) => (
+                <div key={index} className="flex items-center gap-2 mb-2">
+                  <Input
+                    placeholder="مثال: بدون إضاءة أو إضاءة LED"
+                    value={option.label}
+                    onChange={(e) => handleOptionChange('lightingList', index, 'label', e.target.value)}
+                  />
+                  <div className="w-36">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="إضافة سعر (ر.س)"
+                      value={option.priceModifier}
+                      onChange={(e) => handleOptionChange('lightingList', index, 'priceModifier', Number(e.target.value))}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOption('lightingList', index)}
+                    className="text-rose-500 hover:bg-rose-100 p-2 rounded-xl text-xs"
+                    aria-label="حذف اختيار الإضاءة"
                   >
                     ✕
                   </button>

@@ -97,16 +97,16 @@ export default function ProductDetailPage() {
             alt={product.nameAr || product.name}
           />
 
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-            <h1 className="text-2xl sm:text-3xl font-black text-white">
+          <div className="bg-gradient-to-br from-cyan-50 via-white to-amber-50 border border-cyan-100 rounded-3xl p-6 space-y-4 shadow-sm">
+            <h1 className="text-2xl sm:text-3xl font-black text-brand-blue">
               {product.nameAr || product.name}
             </h1>
 
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {product.description}
             </p>
 
-            <div className="flex items-center gap-4 text-xs font-semibold text-amber-400 pt-3 border-t border-slate-800">
+            <div className="flex items-center gap-4 text-xs font-semibold text-amber-700 pt-3 border-t border-cyan-100">
               <span>★ تقييم {product.rating}</span>
               <span>•</span>
               <span>{product.reviewCount} مراجعة</span>
