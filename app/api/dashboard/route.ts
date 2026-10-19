@@ -24,7 +24,7 @@ export async function GET() {
       pendingProofs,
       openTickets,
     ] = await Promise.all([
-      Order.find({}, { _id: 1, orderNumber: 1, total: 1, status: 1, createdAt: 1, customer: 1, items: 1 }).sort({ createdAt: -1 }).lean(),
+      Order.find({}, { _id: 1, orderNumber: 1, total: 1, shippingCost: 1, status: 1, createdAt: 1, customer: 1, items: 1 }).sort({ createdAt: -1 }).lean(),
       Quotation.find({}, { _id: 1, title: 1, createdAt: 1, status: 1, userId: 1 }).sort({ createdAt: -1 }).lean(),
       Product.countDocuments({}),
       Category.countDocuments({}),
@@ -86,6 +86,7 @@ export async function GET() {
         totalPrice: item.totalPrice || 0,
       })),
       total: ord.total || 0,
+      shippingCost: ord.shippingCost,
       status: ord.status || "Pending",
       createdAt: ord.createdAt
         ? new Date(ord.createdAt).toISOString()

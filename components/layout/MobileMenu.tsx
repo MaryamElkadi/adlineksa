@@ -66,7 +66,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="pt-6 border-t border-slate-200 text-xs font-bold text-brand-blue text-center">
-          🇸🇦 شحن سريع لكافة أنحاء المملكة
+          🇸🇦 تكلفة الشحن حسب المدينة، وسنتواصل معك لتأكيدها
         </div>
       </div>
     </div>

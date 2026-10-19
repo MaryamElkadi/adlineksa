@@ -31,6 +31,7 @@ interface Order {
   date: string;
   items: OrderItem[];
   total: number;
+  shippingCost?: number | null;
   step?: number;
   status:
     | "Pending"
@@ -592,7 +593,12 @@ export default function DashboardPage() {
                     <Badge variant={ord.status === 'تم التوصيل' || ord.status === 'Delivered' ? 'green' : 'yellow'} className={ord.status === 'تم التوصيل' || ord.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}>
                       {ord.status}
                     </Badge>
-                    <span className="text-sm font-black text-slate-900">{ord.total} ر.س</span>
+                    <span className="text-left text-sm font-black text-slate-900">
+                      {ord.total} ر.س
+                      {ord.shippingCost === null && (
+                        <span className="mt-1 block text-[10px] font-bold text-slate-500">قبل الشحن</span>
+                      )}
+                    </span>
                   </div>
                 </div>
 
@@ -1217,7 +1223,7 @@ export default function DashboardPage() {
                 <span className="font-bold text-slate-800">{selectedInvoice.total} ر.س</span>
               </div>
               <div className="flex justify-between pt-1 font-black text-sm">
-                <span className="text-slate-900">المبلغ الإجمالي المدفوع:</span>
+                <span className="text-slate-900">الإجمالي قبل الشحن:</span>
                 <span className="text-amber-600">{selectedInvoice.total} ر.س</span>
               </div>
             </div>

@@ -358,12 +358,13 @@ export async function POST(request: Request) {
       };
     });
     const subtotal = verifiedItems.reduce((sum: number, item: { totalPrice: number }) => sum + item.totalPrice, 0);
-    const orderTotal = Math.round((subtotal + subtotal * 0.15 + (subtotal > 300 ? 0 : 35)) * 100) / 100;
+    const orderTotal = Math.round((subtotal + subtotal * 0.15) * 100) / 100;
 
     const order = await Order.create({
       ...body,
       items: verifiedItems,
       total: orderTotal,
+      shippingCost: null,
 
       // IMPORTANT
       ...(currentUser ? { userId: currentUser._id } : {}),

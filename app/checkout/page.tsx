@@ -10,7 +10,7 @@ import { api } from '@/services/api';
 import { UserOrder } from '@/types';
 
 export default function CheckoutPage() {
-  const { items, total, subtotal, tax, shipping, clearCart, updateQuantity, removeItem } = useCart();
+  const { items, total, subtotal, tax, clearCart, updateQuantity, removeItem } = useCart();
 
   const [paymentMethod, setPaymentMethod] = useState<'mada' | 'applepay' | 'stcpay' | 'invoice'>('mada');
   const [orderPlaced, setOrderPlaced] = useState<UserOrder | null>(null);
@@ -55,9 +55,9 @@ export default function CheckoutPage() {
         <div className="w-20 h-20 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center text-4xl mx-auto shadow-md animate-bounce">
           ✓
         </div>
-        <h1 className="text-3xl font-black text-brand-blue">تم تأكيد طلبك بنجاح! 🎉</h1>
+        <h1 className="text-3xl font-black text-brand-blue">تم استلام طلبك بنجاح! 🎉</h1>
         <p className="text-sm text-slate-600 font-medium leading-relaxed">
-          شكراً لاختيارك خط الإعلان السعودية. رقم الطلب الخاص بك هو{' '}
+          شكراً لاختيارك خط الإعلان السعودية. سنتواصل معك لتأكيد تكلفة الشحن حسب مدينتك. رقم الطلب الخاص بك هو{' '}
           <span className="font-black text-amber-600 dir-ltr inline-block">#{orderPlaced.orderNumber}</span>.
         </p>
 
@@ -69,7 +69,7 @@ export default function CheckoutPage() {
             <strong className="text-brand-blue">عنوان التوصيل:</strong> {orderPlaced.shippingAddress}
           </p>
           <p className="text-slate-700">
-            <strong className="text-brand-blue">الإجمالي المدفوع:</strong>{' '}
+            <strong className="text-brand-blue">الإجمالي قبل الشحن:</strong>{' '}
             <span className="text-amber-600 font-black text-sm">{formatCurrency(orderPlaced.total)}</span>
           </p>
         </div>
@@ -92,7 +92,7 @@ export default function CheckoutPage() {
           <span>💳</span> إتمام عملية الدفع
         </h1>
         <p className="text-xs text-slate-500 font-medium mt-1">
-          أدخل بيانات الشحن واختر طريقة الدفع المناسبة لإكمال طلبك بسرعة وأمان.
+          أدخل بياناتك، وسنتواصل معك لتأكيد تكلفة الشحن حسب المدينة.
         </p>
       </div>
 
@@ -280,13 +280,16 @@ export default function CheckoutPage() {
               <span>{formatCurrency(tax)}</span>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>رسوم التوصيل</span>
-              <span>{shipping === 0 ? 'مجاناً ✨' : formatCurrency(shipping)}</span>
+              <span>رسوم الشحن</span>
+              <span>تحدد حسب المدينة</span>
             </div>
             <div className="flex justify-between text-base font-black text-brand-blue pt-2 border-t border-dashed border-slate-200">
-              <span>الإجمالي المستحق</span>
+              <span>الإجمالي قبل الشحن</span>
               <span className="text-amber-600 text-lg">{formatCurrency(total)}</span>
             </div>
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-slate-700">
+              سنتواصل معك على رقم الجوال لتأكيد تكلفة الشحن قبل تجهيز الطلب.
+            </p>
           </div>
 
           <Button
@@ -297,7 +300,7 @@ export default function CheckoutPage() {
             isLoading={isSubmitting}
             disabled={items.length === 0}
           >
-            تأكيد ودفع {formatCurrency(total)} 🚀
+            تأكيد الطلب ({formatCurrency(total)} قبل الشحن) 🚀
           </Button>
         </div>
       </form>

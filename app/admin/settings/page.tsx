@@ -15,7 +15,7 @@ export default function AdminSettingsPage() {
           </span>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">إعدادات النظام والمنصة</h1>
           <p className="text-xs text-slate-600 font-medium mt-0.5">
-            ضبط خيارات المتجر، نسبة الضريبة، تكاليف الشحن السريع، وحسابات المسؤولين
+            ضبط خيارات المتجر، نسبة الضريبة، آلية تأكيد الشحن، وحسابات المسؤولين
           </p>
         </div>
       </div>
@@ -37,15 +37,9 @@ export default function AdminSettingsPage() {
               </span>
             </div>
             <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <span className="font-bold text-slate-700">رسوم التوصيل القياسي داخل السعودية:</span>
-              <span className="font-black text-slate-900 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                35 ر.س
-              </span>
-            </div>
-            <div className="flex justify-between items-center bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100">
-              <span className="font-bold text-emerald-800">الحد الأدنى للشحن المجاني:</span>
-              <span className="font-black text-emerald-700 bg-white px-2.5 py-1 rounded-xl border border-emerald-200 shadow-2xs">
-                300 ر.س
+              <span className="font-bold text-slate-700">رسوم التوصيل:</span>
+              <span className="text-left font-black text-slate-900">
+                تحدد حسب المدينة، ويتم تأكيدها مع العميل
               </span>
             </div>
           </div>

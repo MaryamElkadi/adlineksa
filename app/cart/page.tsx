@@ -8,7 +8,7 @@ import { Input } from '@/components/forms/Input';
 import { formatCurrency } from '@/lib/utils';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, subtotal, tax, shipping, total, isLoaded } = useCart();
+  const { items, removeItem, updateQuantity, subtotal, tax, total, isLoaded } = useCart();
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
 
@@ -172,14 +172,8 @@ export default function CartPage() {
                 <span className="text-slate-800">{formatCurrency(tax)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>الشحن</span>
-                <span>
-                  {shipping === 0 ? (
-                    <span className="text-emerald-600 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">مجاني 🎉</span>
-                  ) : (
-                    formatCurrency(shipping)
-                  )}
-                </span>
+                <span>رسوم الشحن</span>
+                <span className="text-slate-700">تحدد حسب المدينة</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50 p-2 rounded-xl border border-emerald-200">
@@ -188,10 +182,13 @@ export default function CartPage() {
                 </div>
               )}
               <div className="flex justify-between text-base font-black text-brand-blue pt-3 border-t border-slate-200">
-                <span>الإجمالي النهائي</span>
+                <span>الإجمالي قبل الشحن</span>
                 <span className="text-amber-600 text-lg">{formatCurrency(finalTotal)}</span>
               </div>
             </div>
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-slate-700">
+              سنتواصل معك لتأكيد تكلفة الشحن حسب مدينتك قبل تجهيز الطلب.
+            </p>
 
             {/* Coupon Code Input */}
             <div className="space-y-1.5">

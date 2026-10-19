@@ -146,6 +146,12 @@ const OrderSchema = new Schema(
       min: 0,
     },
 
+    shippingCost: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
     items: {
       type: [CartItemSchema],
       required: true,
@@ -212,7 +218,8 @@ OrderSchema.index({ createdAt: -1 });
 
 if (
   models.Order &&
-  (!models.Order.schema.path("items.lighting") ||
+  (!models.Order.schema.path("shippingCost") ||
+    !models.Order.schema.path("items.lighting") ||
     models.Order.schema.path("userId")?.isRequired)
 ) {
   mongoose.deleteModel("Order");

@@ -184,6 +184,9 @@ export default function AdminOrdersPage() {
 
                     <td className="p-4 font-black text-amber-600">
                       {formatCurrency(order.total)}
+                      {order.shippingCost === null && (
+                        <span className="mt-1 block text-[10px] font-bold text-slate-500">قبل الشحن</span>
+                      )}
                     </td>
 
                     <td className="p-4">

@@ -217,6 +217,7 @@ export interface UserOrder {
   date: string;
   status: 'Pending' | 'In Production' | 'Shipped' | 'Delivered' | 'Cancelled';
   total: number;
+  shippingCost?: number | null;
   itemsCount: number;
   items: CartItem[];
   shippingAddress: string;

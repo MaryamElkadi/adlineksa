@@ -23,6 +23,7 @@ interface OrderItem {
     totalPrice: number;
   }[];
   total: number;
+  shippingCost?: number | null;
   status: string;
   createdAt: string;
 }
@@ -318,7 +319,12 @@ const [quotations, setQuotations] = useState<Quotation[]>([]);  // Fetch quotati
                           ))}
                         </div>
                       </td>
-                      <td className="p-3 font-black text-slate-800">{formatCurrency(ord.total)}</td>
+                      <td className="p-3 font-black text-slate-800">
+                        {formatCurrency(ord.total)}
+                        {ord.shippingCost === null && (
+                          <span className="mt-1 block text-[10px] font-bold text-slate-500">قبل الشحن</span>
+                        )}
+                      </td>
                       <td className="p-3">
                         <Badge variant={getBadgeVariant(ord.status)}>
                           {ord.status}

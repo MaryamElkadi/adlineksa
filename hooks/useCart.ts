@@ -146,8 +146,7 @@ export function useCart() {
 
   const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
   const tax = subtotal * 0.15; // 15% VAT in KSA
-  const shipping = subtotal > 300 || items.length === 0 ? 0 : 35;
-  const total = subtotal + tax + shipping;
+  const total = subtotal + tax;
 
   return {
     items,
@@ -158,7 +157,6 @@ export function useCart() {
     clearCart,
     subtotal,
     tax,
-    shipping,
     total,
     itemCount: items.reduce((count, item) => count + item.quantity, 0),
   };

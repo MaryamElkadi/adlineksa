@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, LayoutDashboard, User, LogOut, Home, Menu, Search } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, User, LogOut, Home, Menu, Search, Truck } from 'lucide-react';
 
 import { useCart } from '@/hooks/useCart';
 import { MobileMenu } from './MobileMenu';
@@ -214,6 +214,10 @@ export const Navbar: React.FC = () => {
             </button>
 
           </div>
+        </div>
+        <div className="flex items-center justify-center gap-2 border-t border-slate-100 bg-amber-50 px-4 py-2 text-center text-[11px] font-bold text-slate-700 sm:text-xs">
+          <Truck className="h-4 w-4 shrink-0 text-amber-600" />
+          <span>تكلفة الشحن تتحدد حسب المدينة، وسنتواصل معك لتأكيدها.</span>
         </div>
         {mobileSearchOpen && (
           <form onSubmit={submitSearch} className="xl:hidden px-4 pb-3 sm:px-6">
