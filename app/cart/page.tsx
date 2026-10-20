@@ -107,37 +107,33 @@ export default function CartPage() {
 
                 <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
                   {/* Quantity Control */}
-                  {item.pricingType === 'tiered' ? (
-                    <span className="text-xs font-bold text-slate-600">{item.quantity} قطعة (شريحة ثابتة)</span>
-                  ) : (
-                    <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - (item.pricingType === 'meter' ? 0.01 : 1))}
-                        className="px-3 py-1 text-slate-600 hover:text-red-500 hover:bg-red-50 font-bold transition-colors"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min={item.pricingType === 'meter' ? '0.01' : '1'}
-                        max={item.maxStock}
-                        step={item.pricingType === 'meter' ? '0.01' : '1'}
-                        value={item.quantity}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          if (Number.isFinite(val) && val > 0) updateQuantity(item.id, val);
-                        }}
-                        className="w-16 text-center text-xs font-black text-brand-blue bg-white border-x border-slate-200 py-1 outline-none focus:ring-1 focus:ring-amber-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <button
-                        disabled={item.quantity >= (item.maxStock ?? Infinity)}
-                        onClick={() => updateQuantity(item.id, item.quantity + (item.pricingType === 'meter' ? 0.01 : 1))}
-                        className="px-3 py-1 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 font-bold transition-colors disabled:opacity-40"
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity - (item.pricingType === 'meter' ? 0.01 : 1))}
+                      className="px-3 py-1 text-slate-600 hover:text-red-500 hover:bg-red-50 font-bold transition-colors"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={item.pricingType === 'meter' ? '0.01' : '1'}
+                      max={item.maxStock}
+                      step={item.pricingType === 'meter' ? '0.01' : '1'}
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (Number.isFinite(val) && val > 0 && (item.pricingType === 'meter' || Number.isInteger(val))) updateQuantity(item.id, val);
+                      }}
+                      className="w-16 text-center text-xs font-black text-brand-blue bg-white border-x border-slate-200 py-1 outline-none focus:ring-1 focus:ring-amber-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      disabled={item.quantity >= (item.maxStock ?? Infinity)}
+                      onClick={() => updateQuantity(item.id, item.quantity + (item.pricingType === 'meter' ? 0.01 : 1))}
+                      className="px-3 py-1 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 font-bold transition-colors disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
 
                   {/* Price & Delete */}
                   <div className="text-left sm:text-right">

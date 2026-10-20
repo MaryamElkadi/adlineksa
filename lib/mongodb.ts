@@ -2,25 +2,31 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+type MongooseCache = { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
+const globalForMongoose = globalThis as typeof globalThis & { mongooseCache?: MongooseCache };
+const cache = globalForMongoose.mongooseCache || { conn: null, promise: null };
+globalForMongoose.mongooseCache = cache;
+
+/** Reuses one connection promise so model calls never buffer behind parallel connects. */
 export async function connectToDatabase() {
+  if (!MONGODB_URI) throw new Error("MONGODB_URI is missing");
+  if (cache.conn && mongoose.connection.readyState === 1) return cache.conn.connection;
+
+  if (!cache.promise) {
+    mongoose.set("bufferCommands", false);
+    cache.promise = mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 8_000,
+      connectTimeoutMS: 8_000,
+      maxPoolSize: 10,
+    });
+  }
+
   try {
-    console.log("Mongo URI exists:", !!MONGODB_URI);
-
-    if (!MONGODB_URI) {
-      throw new Error("MONGODB_URI is missing");
-    }
-
-    if (mongoose.connection.readyState === 1) {
-      return mongoose.connection;
-    }
-
-    await mongoose.connect(MONGODB_URI);
-
-    console.log("Connected successfully");
-
-    return mongoose.connection;
-  } catch (err) {
-    console.error("MongoDB connection failed:", err);
-    throw err;
+    cache.conn = await cache.promise;
+    return cache.conn.connection;
+  } catch (error) {
+    cache.promise = null;
+    cache.conn = null;
+    throw error;
   }
 }

@@ -52,6 +52,17 @@ export interface QuantityTier {
   discountPercent?: number;
 }
 
+export interface PricingOption {
+  id: string;
+  label: string;
+  unit: 'piece' | 'meter';
+  basePrice: number;
+  tiers: QuantityTier[];
+  tierPriceMode?: 'fixed' | 'perUnit';
+  minQuantity?: number;
+  enabled?: boolean;
+}
+
 export interface ProductColor {
   label: string;
   hex: string;
@@ -102,6 +113,7 @@ export interface Product {
   // Pricing
   basePrice: number;
   pricingType?: 'quantity' | 'tiered' | 'meter';
+  pricingOptions?: PricingOption[];
   colorSelectionMode?: 'custom' | 'predefined';
   configurableDesignPlacements?: ConfigOption[];
   configurablePrintSides?: ConfigOption[];
@@ -202,6 +214,13 @@ export interface CartItem {
   needDesign?: boolean;
   designBrief?: string;
   pricingType?: 'quantity' | 'tiered' | 'meter';
+  pricingOptionId?: string;
+  pricingOptionLabel?: string;
+  pricingUnit?: 'piece' | 'meter';
+  pricingBasePrice?: number;
+  pricingTiers?: QuantityTier[];
+  tierPriceMode?: 'fixed' | 'perUnit';
+  pricingAddOnTotal?: number;
   quantity: number;
   maxStock?: number;
   unitPrice: number;

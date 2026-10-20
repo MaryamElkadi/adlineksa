@@ -222,7 +222,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-0 border border-slate-200 rounded-lg overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => updateQuantity(it.id, it.quantity - 1)}
+                      onClick={() => updateQuantity(it.id, it.quantity - (it.pricingType === 'meter' ? 0.01 : 1))}
                       className="w-7 h-7 flex items-center justify-center text-sm font-bold text-slate-600 bg-slate-50 hover:bg-red-50 hover:text-red-500 transition-colors"
                       aria-label="تقليل الكمية"
                     >
@@ -230,11 +230,13 @@ export default function CheckoutPage() {
                     </button>
                     <input
                       type="number"
-                      min="1"
+                      min={it.pricingType === 'meter' ? '0.01' : '1'}
+                      max={it.maxStock}
+                      step={it.pricingType === 'meter' ? '0.01' : '1'}
                       value={it.quantity}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value, 10);
-                        if (!isNaN(val) && val > 0) {
+                        const val = Number(e.target.value);
+                        if (Number.isFinite(val) && val > 0 && (it.pricingType === 'meter' || Number.isInteger(val))) {
                           updateQuantity(it.id, val);
                         }
                       }}
@@ -242,7 +244,8 @@ export default function CheckoutPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => updateQuantity(it.id, it.quantity + 1)}
+                      disabled={it.quantity >= (it.maxStock ?? Infinity)}
+                      onClick={() => updateQuantity(it.id, it.quantity + (it.pricingType === 'meter' ? 0.01 : 1))}
                       className="w-7 h-7 flex items-center justify-center text-sm font-bold text-slate-600 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                       aria-label="زيادة الكمية"
                     >
@@ -251,9 +254,15 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="text-left space-y-0.5">
-                    <div className="text-[10px] text-slate-400 font-medium">
-                      {formatCurrency(it.unitPrice)} × {it.quantity}
-                    </div>
+                    {it.pricingTiers?.some((tier) => tier.quantity === it.quantity) ? (
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        سعر الشريحة لكمية {it.quantity}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        {formatCurrency(it.unitPrice)} × {it.quantity}
+                      </div>
+                    )}
                     <div className="text-xs font-black text-amber-600">
                       {formatCurrency(it.totalPrice)}
                     </div>

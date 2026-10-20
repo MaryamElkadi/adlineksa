@@ -78,6 +78,9 @@ const CartItemSchema = new Schema(
       enum: ["quantity", "tiered", "meter"],
       default: "quantity",
     },
+    pricingOptionId: { type: String, default: "" },
+    pricingOptionLabel: { type: String, default: "" },
+    pricingUnit: { type: String, enum: ["piece", "meter"], default: "piece" },
 
     quantity: {
       type: Number,
@@ -220,6 +223,7 @@ if (
   models.Order &&
   (!models.Order.schema.path("shippingCost") ||
     !models.Order.schema.path("items.lighting") ||
+    !models.Order.schema.path("items.pricingOptionId") ||
     models.Order.schema.path("userId")?.isRequired)
 ) {
   mongoose.deleteModel("Order");

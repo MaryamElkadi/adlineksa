@@ -12,6 +12,7 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -151,18 +152,19 @@ export default function AdminOrdersPage() {
               <th className="p-4">الإجمالي</th>
               <th className="p-4">الحالة</th>
               <th className="p-4">التاريخ</th>
+              <th className="p-4">التفاصيل</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">
+                <td colSpan={7} className="p-8 text-center text-slate-400 font-medium">
                   جاري تحميل جميع الطلبات...
                 </td>
               </tr>
             ) : filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">
+                <td colSpan={7} className="p-8 text-center text-slate-400 font-medium">
                   لا توجد طلبات تطابق الفلترة الحالية.
                 </td>
               </tr>
@@ -209,7 +211,11 @@ export default function AdminOrdersPage() {
                     </td>
 
                     <td className="p-4 text-xs text-slate-500 font-medium">{order.date}</td>
+                    <td className="p-4"><button onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-brand-blue hover:bg-blue-50">{expandedOrderId === order.id ? 'إخفاء' : 'عرض الطلب'}</button></td>
                   </tr>
+                  {expandedOrderId === order.id && (
+                    <tr className="bg-slate-50/70"><td colSpan={7} className="p-5"><div className="space-y-4"><div className="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4"><div><span className="text-slate-500">عنوان الشحن:</span><p className="mt-1 font-bold text-slate-800">{order.shippingAddress}</p></div><div><span className="text-slate-500">طريقة الدفع:</span><p className="mt-1 font-bold text-slate-800">{order.paymentMethod}</p></div></div><div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="min-w-[760px] w-full text-right text-xs"><thead className="bg-slate-100"><tr><th className="p-3">المنتج والكمية</th><th className="p-3">طريقة التسعير</th><th className="p-3">مواصفات العميل</th><th className="p-3">ملف/ملاحظات</th><th className="p-3">الإجمالي</th></tr></thead><tbody>{order.items.map((item, itemIndex) => <tr key={item.id || itemIndex} className="border-t border-slate-100 align-top"><td className="p-3"><p className="font-black">{item.productName}</p><p className="mt-1 text-slate-600">{item.quantity} {item.pricingUnit === 'meter' ? 'متر' : 'قطعة'}</p></td><td className="p-3"><p className="font-bold text-brand-blue">{item.pricingOptionLabel || (item.pricingType === 'meter' ? 'بالمتر' : item.pricingType === 'tiered' ? 'شرائح كميات' : 'بالقطعة')}</p><p className="mt-1 text-slate-500">{formatCurrency(item.unitPrice)} / {item.pricingUnit === 'meter' ? 'متر' : 'قطعة'}</p></td><td className="p-3 text-slate-600">{[item.size && `المقاس: ${item.size}`, item.material && `الخامة: ${item.material}`, item.color && `اللون: ${item.color}`, item.finish && `التشطيب: ${item.finish}`, item.designPlacement && `مكان التصميم: ${item.designPlacement}`, item.printSide && `الطباعة: ${item.printSide}`, item.lighting && `الإضاءة: ${item.lighting}`, item.installation ? 'يشمل التركيب' : '', item.needDesign ? `تصميم مطلوب: ${item.designBrief || 'نعم'}` : ''].filter(Boolean).map((detail) => <p key={detail}>{detail}</p>)}</td><td className="p-3">{item.fileUrl ? <a href={`/api/orders/${encodeURIComponent(order.id)}/files/${itemIndex}`} className="font-bold text-brand-blue underline">تنزيل الملف</a> : null}{item.customNotes && <p className="mt-1 text-slate-600">{item.customNotes}</p>}</td><td className="p-3 font-black text-amber-700">{formatCurrency(item.totalPrice)}</td></tr>)}</tbody></table></div></div></td></tr>
+                  )}
                 </React.Fragment>
               ))
             )}

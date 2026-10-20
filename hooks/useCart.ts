@@ -67,7 +67,9 @@ export function useCart() {
       return false;
     }
 
-    const isTiered = newItem.pricingType === 'tiered';
+    // Option-based prices can contain exact-quantity overrides, so they must
+    // remain separate cart lines and be reconfigured on the product page.
+    const isTiered = newItem.pricingType === 'tiered' || Boolean(newItem.pricingOptionId);
     const existingIndex = items.findIndex(
       (item) =>
         !isTiered &&
@@ -117,7 +119,7 @@ export function useCart() {
       return;
     }
     const currentItem = items.find((item) => item.id === id);
-    if (!currentItem || currentItem.pricingType === 'tiered') return false;
+    if (!currentItem) return false;
     const otherProductQuantity = items
       .filter((item) => item.productId === currentItem.productId && item.id !== id)
       .reduce((total, item) => total + item.quantity, 0);
@@ -125,13 +127,25 @@ export function useCart() {
 
     const updated = items.map((item) => {
       if (item.id === id) {
-        if (item.pricingType === 'tiered' || quantity > (item.maxStock ?? Infinity)) {
+        if (quantity > (item.maxStock ?? Infinity)) {
           return item;
         }
+        const matchingTier = item.pricingTiers?.find((tier) => tier.quantity === quantity);
+        const tierPrice = matchingTier
+          ? matchingTier.unitPrice * (1 - Math.min(100, Math.max(0, matchingTier.discountPercent || 0)) / 100)
+          : undefined;
+        const basePrice = item.pricingBasePrice;
+        const baseTotal = matchingTier && tierPrice !== undefined
+          ? tierPrice
+          : basePrice !== undefined
+            ? basePrice * quantity
+            : item.unitPrice * quantity;
+        const totalPrice = Math.round(Math.max(0, baseTotal + (item.pricingAddOnTotal || 0)) * 100) / 100;
         return {
           ...item,
           quantity,
-          totalPrice: Math.round(quantity * item.unitPrice * 100) / 100,
+          unitPrice: Math.round((totalPrice / quantity) * 100) / 100,
+          totalPrice,
         };
       }
       return item;

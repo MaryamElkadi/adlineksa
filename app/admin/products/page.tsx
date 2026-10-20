@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Category, Product, ConfigOption, QuantityTier, ProductColor, ImageMedia, VideoMedia } from '@/types';
+import { Category, Product, ConfigOption, QuantityTier, ProductColor, ImageMedia, VideoMedia, PricingOption } from '@/types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/forms/Input';
@@ -22,6 +22,7 @@ interface ProductFormState extends Partial<Product> {
   designPlacementsList: ConfigOption[];
   printSidesList: ConfigOption[];
   lightingList: ConfigOption[];
+  pricingOptionsList: PricingOption[];
   colorSelectionMode: 'custom' | 'predefined';
   images: ImageMedia[];
   videos: VideoMedia[];
@@ -76,6 +77,7 @@ const initialFormState: ProductFormState = {
     { label: 'High Gloss UV', priceModifier: 10 },
   ],
   quantitiesList: [],
+  pricingOptionsList: [],
   colorsList: [],
   colorSelectionMode: 'predefined',
   designPlacementsList: [],
@@ -161,6 +163,7 @@ export default function AdminProductsPage() {
         installationAvailable: fullProduct.installationAvailable || false,
         installationFee: fullProduct.installationFee || 0,
         pricingType: fullProduct.pricingType || (fullProduct.configurableQuantityTiers?.length || fullProduct.quantityTiers?.length ? 'tiered' : 'quantity'),
+        pricingOptionsList: fullProduct.pricingOptions || [],
       });
       setIsModalOpen(true);
     } catch (error) {
@@ -219,6 +222,22 @@ export default function AdminProductsPage() {
     });
   };
 
+  const addPricingOption = () => setFormData((prev) => ({
+    ...prev,
+    pricingOptionsList: [...(prev.pricingOptionsList || []), {
+      id: `pricing-${Date.now()}-${prev.pricingOptionsList?.length || 0}`,
+      label: 'تسعير جديد', unit: 'piece', basePrice: Number(prev.basePrice) || 0,
+      tiers: [], tierPriceMode: 'fixed', minQuantity: 1, enabled: true,
+    }],
+  }));
+  const updatePricingOption = (index: number, changes: Partial<PricingOption>) => setFormData((prev) => ({
+    ...prev, pricingOptionsList: (prev.pricingOptionsList || []).map((option, i) => i === index ? { ...option, ...changes } : option),
+  }));
+  const removePricingOption = (index: number) => setFormData((prev) => ({ ...prev, pricingOptionsList: (prev.pricingOptionsList || []).filter((_, i) => i !== index) }));
+  const addPricingTier = (optionIndex: number) => setFormData((prev) => ({ ...prev, pricingOptionsList: (prev.pricingOptionsList || []).map((option, i) => i === optionIndex ? { ...option, tiers: [...option.tiers, { quantity: option.unit === 'meter' ? 1 : 10, unitPrice: option.basePrice, discountPercent: 0 }] } : option) }));
+  const updatePricingTier = (optionIndex: number, tierIndex: number, field: keyof QuantityTier, value: number) => setFormData((prev) => ({ ...prev, pricingOptionsList: (prev.pricingOptionsList || []).map((option, i) => i === optionIndex ? { ...option, tiers: option.tiers.map((tier, j) => j === tierIndex ? { ...tier, [field]: value } : tier) } : option) }));
+  const removePricingTier = (optionIndex: number, tierIndex: number) => setFormData((prev) => ({ ...prev, pricingOptionsList: (prev.pricingOptionsList || []).map((option, i) => i === optionIndex ? { ...option, tiers: option.tiers.filter((_, j) => j !== tierIndex) } : option) }));
+
   const handleColorChange = (index: number, field: 'label' | 'hex', value: string) => {
     setFormData((prev) => {
       const updated = [...(prev.colorsList || [])];
@@ -251,6 +270,7 @@ export default function AdminProductsPage() {
     const cleanPlacements = (formData.designPlacementsList || []).filter((option) => option.label.trim());
     const cleanPrintSides = (formData.printSidesList || []).filter((option) => option.label.trim());
     const cleanLighting = (formData.lightingList || []).filter((option) => option.label.trim());
+    const cleanPricingOptions = (formData.pricingOptionsList || []).filter((option) => option.label.trim()).map((option) => ({ ...option, tierPriceMode: 'fixed' as const, basePrice: Math.max(0, Number(option.basePrice) || 0), minQuantity: Math.max(option.unit === 'meter' ? 0.01 : 1, Number(option.minQuantity) || 1), tiers: option.tiers.filter((tier) => tier.quantity > 0 && tier.unitPrice >= 0).sort((a, b) => a.quantity - b.quantity) }));
     if (formData.pricingType === 'tiered' && cleanQuantities.length === 0) {
       setError('أضيفي شريحة كمية واحدة على الأقل قبل حفظ المنتج.');
       setIsSubmitting(false);
@@ -278,6 +298,7 @@ export default function AdminProductsPage() {
       gallery: finalImages.filter((image) => image.url !== finalImage).map((image) => image.url),
       basePrice: Number(formData.basePrice) || 0,
       pricingType: formData.pricingType || 'quantity',
+      pricingOptions: cleanPricingOptions,
       stock: Math.max(0, Number(formData.stock) || 0),
       designFee: Number(formData.designFee ?? 75),
       salePrice: formData.salePrice ? Number(formData.salePrice) : undefined,
@@ -801,6 +822,27 @@ export default function AdminProductsPage() {
                 <p className="text-xs font-semibold text-amber-900">أضيفي شريحة واحدة على الأقل لتفعيل هذا المنتج.</p>
               )}
             </div>
+          </div>
+
+          <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-200/70 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-indigo-200 pb-3">
+              <div><span className="text-xs font-black text-indigo-950 block">⚙️ خيارات تسعير متعددة</span><p className="text-[10px] text-indigo-800">حددي سعر الوحدة للكمية العادية. سعر كل شريحة هو إجمالي ثابت للكمية المحددة ويُستخدم كما هو دون ضربه في عدد القطع.</p></div>
+              <button type="button" onClick={addPricingOption} className="rounded-xl bg-indigo-600 px-3 py-2 text-[11px] font-black text-white">+ إضافة طريقة تسعير</button>
+            </div>
+            {!formData.pricingOptionsList?.length && <p className="text-xs text-indigo-800">لا توجد خيارات إضافية؛ سيستمر المنتج في استخدام طريقة التسعير الأساسية أعلاه.</p>}
+            {(formData.pricingOptionsList || []).map((option, optionIndex) => (
+              <div key={option.id} className="space-y-3 rounded-2xl border border-indigo-200 bg-white p-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                  <Input value={option.label} onChange={(e) => updatePricingOption(optionIndex, { label: e.target.value })} placeholder="مثال: بالمتر مع شرائح" />
+                  <select value={option.unit} onChange={(e) => updatePricingOption(optionIndex, { unit: e.target.value as PricingOption['unit'], minQuantity: e.target.value === 'meter' ? 0.01 : 1 })} className="rounded-xl border border-slate-200 px-3 text-xs font-bold"><option value="piece">بالقطعة</option><option value="meter">بالمتر</option></select>
+                  <Input type="number" min="0" step="0.01" value={option.basePrice} onChange={(e) => updatePricingOption(optionIndex, { basePrice: Number(e.target.value) })} placeholder="السعر الأساسي" />
+                  <div className="flex items-center rounded-xl border border-indigo-100 bg-indigo-50 px-3 text-xs font-bold text-indigo-800">سعر الشريحة إجمالي ثابت</div>
+                  <div className="flex items-center justify-between gap-2"><label className="flex items-center gap-1 text-[11px] font-bold"><input type="checkbox" checked={option.enabled !== false} onChange={(e) => updatePricingOption(optionIndex, { enabled: e.target.checked })} /> مفعّل</label><button type="button" onClick={() => removePricingOption(optionIndex)} className="text-xs font-bold text-rose-600">حذف</button></div>
+                </div>
+                <div className="flex items-center justify-between"><span className="text-[11px] font-black text-indigo-800">شرائح الكميات {option.unit === 'meter' ? '(متر)' : '(قطعة)'}</span><button type="button" onClick={() => addPricingTier(optionIndex)} className="text-[11px] font-bold text-indigo-700">+ إضافة شريحة</button></div>
+                {option.tiers.map((tier, tierIndex) => <div key={tierIndex} className="grid grid-cols-1 items-end gap-2 rounded-xl bg-slate-50 p-2 sm:grid-cols-4"><label className="text-[10px] font-bold">الكمية<Input type="number" min={option.unit === 'meter' ? '0.01' : '1'} step={option.unit === 'meter' ? '0.01' : '1'} value={tier.quantity} onChange={(e) => updatePricingTier(optionIndex, tierIndex, 'quantity', Number(e.target.value))} /></label><label className="text-[10px] font-bold">السعر الإجمالي للشريحة<Input type="number" min="0" step="0.01" value={tier.unitPrice} onChange={(e) => updatePricingTier(optionIndex, tierIndex, 'unitPrice', Number(e.target.value))} /></label><label className="text-[10px] font-bold">الخصم %<Input type="number" min="0" max="100" value={tier.discountPercent || 0} onChange={(e) => updatePricingTier(optionIndex, tierIndex, 'discountPercent', Number(e.target.value))} /></label><button type="button" onClick={() => removePricingTier(optionIndex, tierIndex)} className="mb-1 text-xs font-bold text-rose-600">حذف الشريحة</button></div>)}
+              </div>
+            ))}
           </div>
 
           <div className="bg-cyan-50/60 p-4 rounded-2xl border border-cyan-200/70 space-y-4">

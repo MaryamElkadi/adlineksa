@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Product } from '@/types';
+import { PricingOption, Product, QuantityTier } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/useCart';
@@ -30,9 +30,16 @@ function getInitialQuantity(product: Product, pricingType: NonNullable<Product['
 
 export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product }) => {
   const { addItem } = useCart();
-  const pricingType = product.pricingType || (
+  const legacyPricingType = product.pricingType || (
     product.configurableQuantityTiers?.length || product.quantityTiers?.length ? 'tiered' : 'quantity'
   );
+  const pricingOptions: PricingOption[] = product.pricingOptions?.filter((option) => option.enabled !== false) || [];
+  const [selectedPricingOptionId, setSelectedPricingOptionId] = useState(pricingOptions[0]?.id || 'legacy');
+  const activePricingOption = pricingOptions.find((option) => option.id === selectedPricingOptionId);
+  const pricingUnit = activePricingOption?.unit || (legacyPricingType === 'meter' ? 'meter' : 'piece');
+  // A pricing option always accepts a free quantity. Its tiers are exact-quantity
+  // price overrides (100, 200, 300…) rather than a restriction on ordering.
+  const pricingType = activePricingOption ? (pricingUnit === 'meter' ? 'meter' : 'quantity') : legacyPricingType;
   const maxAvailable = Math.min(Number(product.stock) || 0, Number(product.maxQuantity) || Infinity);
 
   const materialOptions = product.configurableMaterials?.length
@@ -44,7 +51,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
 
   const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || 'قياسي');
   const [selectedMaterial, setSelectedMaterial] = useState(materialOptions[0] || 'افتراضي');
-  const [quantity, setQuantity] = useState(() => getInitialQuantity(product, pricingType));
+  const [quantity, setQuantity] = useState(() => activePricingOption?.minQuantity || getInitialQuantity(product, legacyPricingType));
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.label || '');
   const [customColorHex, setCustomColorHex] = useState('#000000');
   const [designPlacement, setDesignPlacement] = useState(product.configurableDesignPlacements?.[0]?.label || '');
@@ -65,18 +72,41 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   );
   const [customNotes, setCustomNotes] = useState('');
   const [fileUploaded, setFileUploaded] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [needDesign, setNeedDesign] = useState(false);
   const [designBrief, setDesignBrief] = useState('');
 
-  const hasConfigurableTiers = pricingType === 'tiered' && Boolean(
-    product.configurableQuantityTiers?.length || product.quantityTiers?.length
-  );
-  const matchingTier = product.configurableQuantityTiers?.find((t) => t.quantity === quantity);
+  const hasConfigurableTiers = !activePricingOption && pricingType === 'tiered' && Boolean(product.configurableQuantityTiers?.length || product.quantityTiers?.length);
+  const selectedBasePrice = activePricingOption?.basePrice ?? product.basePrice ?? 0;
+  const activeTiers: QuantityTier[] = activePricingOption
+    ? activePricingOption.tiers
+    : product.configurableQuantityTiers?.length
+      ? product.configurableQuantityTiers
+      : pricingType === 'tiered'
+        ? (product.quantityTiers || []).map((tierQuantity) => ({
+          quantity: tierQuantity,
+          unitPrice: selectedBasePrice,
+        }))
+        : [];
+  const matchingTier = activeTiers.find((t) => t.quantity === quantity);
   const tierDiscount = Math.min(100, Math.max(0, matchingTier?.discountPercent || 0));
-  const basePriceForQuantity = pricingType === 'tiered'
-    ? (matchingTier?.unitPrice ?? (product.basePrice ?? 0)) * (1 - tierDiscount / 100)
-    : (product.basePrice ?? 0) * quantity;
+  const tierValue = (matchingTier?.unitPrice ?? selectedBasePrice) * (1 - tierDiscount / 100);
+  const isFixedTierPrice = Boolean(matchingTier) || pricingType === 'tiered';
+  const basePriceForQuantity = activePricingOption
+    ? matchingTier
+      ? tierValue
+      : selectedBasePrice * quantity
+    : pricingType === 'tiered' && matchingTier
+      ? tierValue
+      : selectedBasePrice * quantity;
+  const selectedPricingLabel = activePricingOption?.label || (
+    pricingType === 'tiered' ? 'شرائح الكميات' : pricingUnit === 'meter' ? 'بالمتر' : 'بالقطعة'
+  );
+  const tierPriceLabel = isFixedTierPrice
+    ? 'إجمالي الشريحة'
+    : pricingUnit === 'meter' ? 'سعر المتر' : 'سعر القطعة';
 
   const matOption = product.configurableMaterials?.find((m) => m.label === selectedMaterial);
   const sizeOption = product.configurableSizes?.find((s) => s.label === selectedSize);
@@ -100,8 +130,8 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
   const selectedPredefinedColor = product.colors?.find((color) => color.label === selectedColor);
   const chosenColorHex = product.colorSelectionMode === 'custom' ? customColorHex : selectedPredefinedColor?.hex;
   const quantityOptions = hasConfigurableTiers
-    ? product.configurableQuantityTiers?.length
-      ? product.configurableQuantityTiers
+    ? activeTiers.length
+      ? activeTiers
         .filter((tier) => Number.isFinite(tier.quantity) && tier.quantity > 0)
         .filter((tier) => tier.quantity <= maxAvailable)
         .sort((a, b) => a.quantity - b.quantity)
@@ -131,6 +161,22 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       needDesign,
       designBrief: needDesign ? designBrief : '',
       pricingType,
+      pricingOptionId: activePricingOption?.id || undefined,
+      pricingOptionLabel: activePricingOption?.label || undefined,
+      pricingUnit,
+      pricingBasePrice: selectedBasePrice,
+      pricingTiers: activePricingOption?.tiers.length
+        ? activePricingOption.tiers
+        : pricingType === 'tiered'
+          ? product.configurableQuantityTiers?.length
+            ? product.configurableQuantityTiers
+            : (product.quantityTiers || []).map((tierQuantity) => ({
+              quantity: tierQuantity,
+              unitPrice: selectedBasePrice,
+            }))
+          : [],
+      tierPriceMode: 'fixed',
+      pricingAddOnTotal: addOnPrice,
       quantity,
       maxStock: maxAvailable,
       unitPrice: unitCalculatedPrice,
@@ -149,9 +195,32 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
 
   const updateEnteredQuantity = (value: string) => {
     const nextQuantity = Number(value);
-    const minimum = pricingType === 'meter' ? 0.01 : Math.max(1, Number(product.minQuantity) || 1);
+    const minimum = activePricingOption?.minQuantity || (pricingUnit === 'meter' ? 0.01 : Math.max(1, Number(product.minQuantity) || 1));
     if (Number.isFinite(nextQuantity) && nextQuantity >= minimum) {
       setQuantity(Math.min(nextQuantity, maxAvailable));
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setCartError('');
+    if (file.size > 50 * 1024 * 1024) {
+      setCartError('حجم الملف يجب ألا يتجاوز 50MB.');
+      return;
+    }
+    setIsUploadingFile(true);
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      data.append('name', `ملف طلب: ${product.nameAr || product.name}`);
+      const response = await fetch('/api/artworks', { method: 'POST', body: data });
+      const result = await response.json();
+      if (!response.ok || !result.fileUrl) throw new Error(result.message || 'تعذر رفع الملف.');
+      setFileUploaded(result.fileUrl);
+      setUploadedFileName(file.name);
+    } catch (error) {
+      setCartError(error instanceof Error ? error.message : 'تعذر رفع الملف.');
+    } finally {
+      setIsUploadingFile(false);
     }
   };
 
@@ -265,25 +334,34 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       ) : null}
 
       {/* الخطوة 3: الكمية */}
+      {pricingOptions.length > 0 && (
+        <div>
+          <label className="mb-2 block text-xs font-bold text-slate-700">3. اختاري طريقة التسعير</label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {pricingOptions.map((option) => <button key={option.id} type="button" onClick={() => { setSelectedPricingOptionId(option.id); setQuantity(option.minQuantity || (option.unit === 'meter' ? 0.01 : 1)); }} className={`rounded-xl border p-3 text-right text-xs font-bold ${activePricingOption?.id === option.id ? 'border-brand-blue bg-blue-50 text-brand-blue' : 'border-slate-200 bg-slate-50 text-slate-700'}`}><span className="block">{option.label}</span><span className="mt-1 block text-[10px] opacity-75">{option.unit === 'meter' ? 'بالمتر' : 'بالقطعة'}{option.tiers.length ? ' • شرائح كميات' : ''}</span></button>)}
+          </div>
+          <p className="mt-2 text-[11px] font-semibold text-slate-500">يمكن إدخال أي كمية. تُطبّق شريحة خاصة تلقائياً فقط عند مطابقة كمية الشريحة بالضبط.</p>
+        </div>
+      )}
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            3. {pricingType === 'meter' ? 'الطول بالمتر' : 'الكمية'}
+            {pricingOptions.length ? '4.' : '3.'} {pricingUnit === 'meter' ? 'الطول بالمتر' : 'الكمية'}
           </label>
           {matchingTier && (
             <span className="text-xs text-amber-600 font-bold">
-              السعر لهذه الكمية: {formatCurrency(matchingTier.unitPrice)}
+              {tierPriceLabel}: {formatCurrency(tierValue)}
             </span>
           )}
         </div>
         <p className={`mb-3 text-xs font-bold ${maxAvailable > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
           {maxAvailable > 0
-            ? `المتاح في المخزون: ${maxAvailable} ${pricingType === 'meter' ? 'متر' : 'قطعة'}`
+            ? `المتاح في المخزون: ${maxAvailable} ${pricingUnit === 'meter' ? 'متر' : 'قطعة'}`
             : 'نفدت الكمية حالياً'}
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          {pricingType === 'tiered' && quantityOptions.map((q) => {
-            const tier = product.configurableQuantityTiers?.find((item) => item.quantity === q);
+          {(activePricingOption?.tiers?.length ? activePricingOption.tiers : pricingType === 'tiered' ? activeTiers : []).map((tier) => {
+            const q = tier.quantity;
             return (
               <button
                 key={q}
@@ -295,33 +373,30 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
                 }`}
               >
-                <span className="block text-sm">{q} قطعة</span>
-                {tier && (
-                  <span className="mt-0.5 block font-bold text-slate-800">
-                    {tier.discountPercent ? (
-                      <>
-                        <span className="ml-1 text-[10px] text-slate-400 line-through">{formatCurrency(tier.unitPrice)}</span>
-                        {formatCurrency(tier.unitPrice * (1 - Math.min(100, Math.max(0, tier.discountPercent)) / 100))}
-                        <span className="mr-1 text-[10px] text-emerald-700">خصم {tier.discountPercent}%</span>
-                      </>
-                    ) : formatCurrency(tier.unitPrice)}
+                <span className="block text-sm">{q} {pricingUnit === 'meter' ? 'متر' : 'قطعة'}</span>
+                <span className="mt-0.5 block font-bold text-slate-800">
+                  {tier.discountPercent ? (
+                    <><span className="ml-1 text-[10px] text-slate-400 line-through">{formatCurrency(tier.unitPrice)}</span>{formatCurrency(tier.unitPrice * (1 - Math.min(100, Math.max(0, tier.discountPercent)) / 100))}<span className="mr-1 text-[10px] text-emerald-700">خصم {tier.discountPercent}%</span></>
+                  ) : formatCurrency(tier.unitPrice)}
+                  <span className="mr-1 text-[10px] font-semibold text-slate-500">
+                    إجمالي الشريحة
                   </span>
-                )}
+                </span>
               </button>
             );
           })}
-          {pricingType !== 'tiered' && (
+          {(activePricingOption || pricingType !== 'tiered') && (
             <input
               type="number"
-              min={pricingType === 'meter' ? '0.01' : Math.max(1, Number(product.minQuantity) || 1)}
+              min={pricingUnit === 'meter' ? '0.01' : Math.max(1, Number(product.minQuantity) || 1)}
               max={maxAvailable}
-              step={pricingType === 'meter' ? '0.01' : '1'}
+              step={pricingUnit === 'meter' ? '0.01' : '1'}
               value={quantity}
               onChange={(e) => updateEnteredQuantity(e.target.value)}
               className="w-24 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-brand-blue text-center font-bold"
             />
           )}
-          {pricingType === 'tiered' && !quantityOptions.length && maxAvailable > 0 && (
+          {pricingType === 'tiered' && !activePricingOption && !quantityOptions.length && maxAvailable > 0 && (
             <p className="text-xs font-semibold text-rose-600">لا توجد شريحة كمية متاحة ضمن المخزون الحالي.</p>
           )}
         </div>
@@ -443,17 +518,12 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       <input
         type="file"
         className="hidden"
-        onChange={(e) => {
-          if (e.target.files?.[0]) {
-            setFileUploaded(e.target.files[0].name);
-          }
-        }}
+        onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFileUpload(file); }}
+        disabled={isUploadingFile}
       />
 
       <span className="inline-block px-4 py-2 rounded-lg bg-white border border-slate-300 font-bold text-brand-blue">
-        {fileUploaded
-          ? `الملف: ${fileUploaded}`
-          : 'اختر الملف'}
+        {isUploadingFile ? 'جاري رفع الملف...' : fileUploaded ? `الملف: ${uploadedFileName}` : 'اختر الملف'}
       </span>
 
     </label>
@@ -529,16 +599,20 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     )}
 
     <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-      السعر التقديري
+      {`السعر التقديري ${pricingUnit === 'meter' ? 'للمتر' : 'للقطعة'}${pricingType === 'tiered' || activePricingOption?.tiers.length ? ` حسب ${selectedPricingLabel}` : ''}`}
     </span>
 
     <div className="flex items-baseline gap-2">
       <span className="text-3xl font-black text-amber-400">
-        {formatCurrency(totalCalculatedPrice)}
+        {formatCurrency(unitCalculatedPrice)}
       </span>
-
-      <span className="text-xs text-slate-300">
-        ({formatCurrency(unitCalculatedPrice)} / {pricingType === 'meter' ? 'للمتر' : 'للقطعة'})
+    </div>
+    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-4 py-3 text-slate-900">
+      <span className="text-sm font-bold">
+        الإجمالي للكمية {quantity} {pricingUnit === 'meter' ? 'متر' : 'قطعة'}
+      </span>
+      <span className="text-xl font-black">
+        {formatCurrency(totalCalculatedPrice)}
       </span>
     </div>
 

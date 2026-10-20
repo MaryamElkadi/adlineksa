@@ -5,12 +5,10 @@ import { cookies } from "next/headers";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { createToken } from "@/lib/auth";
-import { ensureInitialCatalog } from "@/lib/seed";
 
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    await ensureInitialCatalog();
 
     const { email, password } = await req.json();
 
@@ -24,10 +22,6 @@ export async function POST(req: Request) {
     const user = await User.findOne({
       email: email.toLowerCase(),
     });
-    console.log("===============");
-console.log("Email entered:", email);
-console.log("User found:", user);
-console.log("===============");
 
     if (!user) {
       return NextResponse.json(
@@ -40,7 +34,6 @@ console.log("===============");
       password,
       user.password
     );
-    console.log("Password correct:", passwordCorrect);
 
     if (!passwordCorrect) {
       return NextResponse.json(
@@ -79,11 +72,19 @@ console.log("===============");
     });
 
   } catch (error) {
-    console.error(error);
+    const isDatabaseUnavailable = error instanceof Error && (
+      error.name === "MongooseServerSelectionError" ||
+      error.name === "MongoServerSelectionError"
+    );
+    console.error("Login request failed:", error instanceof Error ? error.message : error);
 
     return NextResponse.json(
-      { message: "Server Error" },
-      { status: 500 }
+      {
+        message: isDatabaseUnavailable
+          ? "تعذر الاتصال بقاعدة البيانات حالياً. يرجى مراجعة إعدادات MongoDB Atlas والسماح بعنوان IP الخاص بالخادم."
+          : "تعذر تسجيل الدخول حالياً.",
+      },
+      { status: isDatabaseUnavailable ? 503 : 500 }
     );
   }
 }

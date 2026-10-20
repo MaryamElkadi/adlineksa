@@ -27,6 +27,17 @@ const QuantityTierSchema = new Schema({
   discountPercent: { type: Number, default: 0, min: 0, max: 100 },
 }, { _id: false });
 
+const PricingOptionSchema = new Schema({
+  id: { type: String, required: true, trim: true },
+  label: { type: String, required: true, trim: true },
+  unit: { type: String, enum: ["piece", "meter"], required: true },
+  basePrice: { type: Number, required: true, min: 0 },
+  tiers: { type: [QuantityTierSchema], default: [] },
+  tierPriceMode: { type: String, enum: ["fixed", "perUnit"], default: "fixed" },
+  minQuantity: { type: Number, default: 1, min: 0.01 },
+  enabled: { type: Boolean, default: true },
+}, { _id: false });
+
 const ProductColorSchema = new Schema({
   label: { type: String, required: true, trim: true },
   hex: { type: String, required: true, match: /^#[0-9a-fA-F]{6}$/ },
@@ -47,6 +58,7 @@ const ProductSchema = new Schema({
   coverImage: { type: String, default: "" },
   basePrice: { type: Number, required: true, min: 0 },
   pricingType: { type: String, enum: ["quantity", "tiered", "meter"] },
+  pricingOptions: { type: [PricingOptionSchema], default: [] },
   colorSelectionMode: { type: String, enum: ["custom", "predefined"], default: "predefined" },
   configurableDesignPlacements: { type: [ConfigOptionSchema], default: [] },
   configurablePrintSides: { type: [ConfigOptionSchema], default: [] },
@@ -97,7 +109,7 @@ const ProductSchema = new Schema({
 
 if (
   models.Product &&
-  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "colors", "colorSelectionMode", "configurableDesignPlacements", "configurablePrintSides", "configurableLighting", "installationAvailable", "installationFee"]
+  !["configurableMaterials", "configurableSizes", "configurableFinishes", "configurableQuantityTiers", "designFee", "pricingType", "pricingOptions", "colors", "colorSelectionMode", "configurableDesignPlacements", "configurablePrintSides", "configurableLighting", "installationAvailable", "installationFee"]
     .every((path) => models.Product.schema.path(path))
 ) {
   mongoose.deleteModel("Product");

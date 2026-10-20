@@ -183,7 +183,7 @@ export async function POST(request: Request) {
         !/^[a-f\d]{24}$/i.test(item.productId) ||
         !Number.isFinite(item.quantity) ||
         !["quantity", "tiered", "meter"].includes(item.pricingType || "quantity") ||
-        (item.pricingType === "meter"
+        ((item.pricingUnit === "meter" || item.pricingType === "meter")
           ? item.quantity < 0.01
           : item.quantity < 1 || !Number.isInteger(item.quantity))
       ) {
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     const products = await Product.find({ _id: { $in: [...requestedQuantities.keys()] } })
-      .select("pricingType basePrice configurableQuantityTiers quantityTiers minQuantity maxQuantity colorSelectionMode colors configurableDesignPlacements configurablePrintSides configurableLighting installationAvailable installationFee designFee configurableMaterials configurableSizes configurableFinishes active")
+      .select("pricingType pricingOptions basePrice configurableQuantityTiers quantityTiers minQuantity maxQuantity colorSelectionMode colors configurableDesignPlacements configurablePrintSides configurableLighting installationAvailable installationFee designFee configurableMaterials configurableSizes configurableFinishes active")
       .lean();
     const productsById = new Map(products.map((product) => [String(product._id), product]));
 
@@ -209,23 +209,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: "أحد المنتجات لم يعد متاحاً." }, { status: 409 });
       }
 
-      const hasTiers = Boolean(product.configurableQuantityTiers?.length || product.quantityTiers?.length);
-      const pricingType = product.pricingType || (hasTiers ? "tiered" : "quantity");
-      const requestedPricingType = item.pricingType || (product.pricingType ? "quantity" : pricingType);
-      if (requestedPricingType !== pricingType) {
+      const pricingOption = product.pricingOptions?.find((option: { id: string; enabled?: boolean }) => option.id === item.pricingOptionId && option.enabled !== false);
+      if (product.pricingOptions?.length && !pricingOption) {
+        return NextResponse.json({ message: "خيار التسعير المحدد لم يعد متاحاً. حدّثي السلة وحاولي مرة أخرى." }, { status: 409 });
+      }
+      const hasTiers = Boolean(pricingOption?.tiers?.length || product.configurableQuantityTiers?.length || product.quantityTiers?.length);
+      const pricingType = pricingOption ? (pricingOption.unit === "meter" ? "meter" : "quantity") : product.pricingType || (hasTiers ? "tiered" : "quantity");
+      const pricingUnit = pricingOption?.unit || (pricingType === "meter" ? "meter" : "piece");
+      const requestedPricingType = item.pricingType || pricingType;
+      if (!pricingOption && requestedPricingType !== pricingType) {
         return NextResponse.json({ message: "طريقة تسعير أحد المنتجات تغيرت. حدّثي السلة وحاولي مرة أخرى." }, { status: 409 });
       }
 
-      if (
-        pricingType === "tiered" &&
-        (product.configurableQuantityTiers?.length
-          ? !product.configurableQuantityTiers.some((tier: { quantity: number }) => tier.quantity === item.quantity)
-          : !(product.quantityTiers || []).includes(item.quantity))
-      ) {
-        return NextResponse.json({ message: "اختاري إحدى شرائح الكمية المتاحة لهذا المنتج." }, { status: 400 });
-      }
-
-      const minimum = pricingType === "meter" ? 0.01 : Math.max(1, product.minQuantity || 1);
+      const minimum = pricingOption?.minQuantity || (pricingUnit === "meter" ? 0.01 : Math.max(1, product.minQuantity || 1));
       if (item.quantity < minimum || (product.maxQuantity && item.quantity > product.maxQuantity)) {
         return NextResponse.json({ message: "الكمية المطلوبة خارج الحدود المسموح بها لهذا المنتج." }, { status: 400 });
       }
@@ -313,6 +309,9 @@ export async function POST(request: Request) {
       productId: string;
       quantity: number;
       pricingType?: string;
+      pricingOptionId?: string;
+      pricingOptionLabel?: string;
+      pricingUnit?: string;
       needDesign?: boolean;
       installation?: boolean;
       designPlacement?: string;
@@ -325,14 +324,21 @@ export async function POST(request: Request) {
       const product = productsById.get(item.productId);
       if (!product) throw new Error(`Product ${item.productId} disappeared during order validation.`);
 
-      const hasTiers = Boolean(product.configurableQuantityTiers?.length || product.quantityTiers?.length);
-      const pricingType = product.pricingType || (hasTiers ? "tiered" : "quantity");
-      const tier = product.configurableQuantityTiers?.find(
+      const pricingOption = product.pricingOptions?.find((option: { id: string; enabled?: boolean }) => option.id === item.pricingOptionId && option.enabled !== false);
+      const hasTiers = Boolean(pricingOption?.tiers?.length || product.configurableQuantityTiers?.length || product.quantityTiers?.length);
+      const pricingType = pricingOption ? (pricingOption.unit === "meter" ? "meter" : "quantity") : product.pricingType || (hasTiers ? "tiered" : "quantity");
+      const tier = (pricingOption?.tiers || product.configurableQuantityTiers || []).find(
         (option: { quantity: number }) => option.quantity === item.quantity
       );
-      const tierPrice = pricingType === "tiered"
-        ? (tier?.unitPrice ?? product.basePrice ?? 0) * (1 - Math.min(100, Math.max(0, tier?.discountPercent || 0)) / 100)
-        : (product.basePrice || 0) * item.quantity;
+      const hasMatchingTier = Boolean(tier) || (!pricingOption && (product.quantityTiers || []).includes(item.quantity));
+      const tierValue = (tier?.unitPrice ?? pricingOption?.basePrice ?? product.basePrice ?? 0) * (1 - Math.min(100, Math.max(0, tier?.discountPercent || 0)) / 100);
+      const tierPrice = pricingOption
+        ? tier
+          ? tierValue
+          : (pricingOption.basePrice ?? product.basePrice ?? 0) * item.quantity
+        : pricingType === "tiered"
+          ? hasMatchingTier ? tierValue : (product.basePrice ?? 0) * item.quantity
+          : (product.basePrice ?? 0) * item.quantity;
       const findModifier = (options: Array<{ label: string; priceModifier: number }> | undefined, label: string | undefined) =>
         options?.find((option) => option.label === label)?.priceModifier || 0;
       const placementFee = findModifier(product.configurableDesignPlacements, item.designPlacement);
@@ -352,7 +358,10 @@ export async function POST(request: Request) {
       const totalPrice = Math.round(Math.max(0, tierPrice + optionFees) * 100) / 100;
       return {
         ...item,
-        pricingType: item.pricingType || product.pricingType || (hasTiers ? "tiered" : "quantity"),
+        pricingType,
+        pricingOptionId: pricingOption?.id || "",
+        pricingOptionLabel: pricingOption?.label || "",
+        pricingUnit: pricingOption?.unit || (pricingType === "meter" ? "meter" : "piece"),
         unitPrice: Math.round((totalPrice / item.quantity) * 100) / 100,
         totalPrice,
       };
