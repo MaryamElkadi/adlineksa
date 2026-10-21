@@ -5,25 +5,46 @@ import { cookies } from "next/headers";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { createToken } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, getAuthCookieOptions } from "@/lib/authCookie";
+import { getClientIp, rateLimitResponse } from "@/lib/rateLimit";
+import { persistentRateLimit } from "@/lib/persistentRateLimit";
+import { assertSameOrigin } from "@/lib/requestSecurity";
 
 export async function POST(req: Request) {
-  try {
-    await connectToDatabase();
+  const originError = assertSameOrigin(req);
+  if (originError) return originError;
 
+  try {
     const { email, password } = await req.json();
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json(
         { message: "Email and password are required." },
         { status: 400 }
       );
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+    const ip = getClientIp(req);
+    const limits = await Promise.all([
+      persistentRateLimit(`login:ip:${ip}`, 30, 15 * 60_000),
+      persistentRateLimit(`login:email:${normalizedEmail}`, 8, 15 * 60_000),
+    ]);
+    const limited = limits.find((result) => !result.ok);
+    if (limited) {
+      return NextResponse.json(rateLimitResponse(limited.retryAfter), {
+        status: 429,
+        headers: { "Retry-After": String(limited.retryAfter) },
+      });
+    }
+
+    await connectToDatabase();
+
     const user = await User.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     });
 
-    if (!user) {
+    if (!user || user.isActive === false) {
       return NextResponse.json(
         { message: "Invalid email or password." },
         { status: 401 }
@@ -45,18 +66,15 @@ export async function POST(req: Request) {
     const token = createToken({
       id: user._id.toString(),
       role: user.role,
+      sessionVersion: user.sessionVersion || 0,
     });
 
     const cookieStore = await cookies();
 
     cookieStore.set({
-      name: "adline_token",
+      name: AUTH_COOKIE_NAME,
       value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      ...getAuthCookieOptions(),
     });
 
     return NextResponse.json({
@@ -76,7 +94,7 @@ export async function POST(req: Request) {
       error.name === "MongooseServerSelectionError" ||
       error.name === "MongoServerSelectionError"
     );
-    console.error("Login request failed:", error instanceof Error ? error.message : error);
+    console.error("Login request failed:", error instanceof Error ? error.name : "unknown");
 
     return NextResponse.json(
       {

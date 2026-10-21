@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import SallaStore from "@/models/SallaStore";
 import { sallaRequest } from "@/lib/salla";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     await connectToDatabase();
 
@@ -59,8 +62,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Salla API request failed",
+        message: "Salla API request failed",
       },
       { status: 500 }
     );

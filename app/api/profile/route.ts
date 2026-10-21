@@ -111,6 +111,7 @@ export async function PATCH(request: Request) {
       const newToken = createToken({
         id: updatedUser._id.toString(),
         role: updatedUser.role,
+        sessionVersion: updatedUser.sessionVersion || 0,
       });
 
       const cookieStore = await cookies();
@@ -124,10 +125,10 @@ export async function PATCH(request: Request) {
     }
 
     return response;
-  } catch (error: any) {
-    console.error("PATCH PROFILE ERROR:", error);
+  } catch (error) {
+    console.error("PATCH PROFILE ERROR:", error instanceof Error ? error.name : "unknown");
     return NextResponse.json(
-      { message: error?.message || "حدث خطأ أثناء تحديث الملف الشخصي" },
+      { message: "حدث خطأ أثناء تحديث الملف الشخصي" },
       { status: 500 }
     );
   }

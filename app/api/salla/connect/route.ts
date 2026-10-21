@@ -1,10 +1,13 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { getSallaAuthorizationUrl } from "@/lib/salla";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     const state = crypto.randomBytes(32).toString("hex");
     const response = NextResponse.redirect(getSallaAuthorizationUrl(state));

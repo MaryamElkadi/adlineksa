@@ -3,8 +3,23 @@ import bcrypt from "bcryptjs";
 
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { assertSameOrigin } from "@/lib/requestSecurity";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  const originError = assertSameOrigin(req);
+  if (originError) return originError;
+
+  const limited = rateLimit(`register:${getClientIp(req)}`, 8, 60 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json(rateLimitResponse(limited.retryAfter), {
+      status: 429,
+      headers: { "Retry-After": String(limited.retryAfter) },
+    });
+  }
+
   try {
     await connectToDatabase();
 
@@ -20,7 +35,11 @@ export async function POST(req: Request) {
       !firstName ||
       !lastName ||
       !email ||
-      !password
+      !password ||
+      typeof firstName !== "string" ||
+      typeof lastName !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string"
     ) {
       return NextResponse.json(
         {
@@ -30,7 +49,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const exists = await User.findOne({ email });
+    if (!EMAIL_REGEX.test(email) || password.length < 6) {
+      return NextResponse.json(
+        { message: "A valid email and a password of at least 6 characters are required." },
+        { status: 400 }
+      );
+    }
+
+    const exists = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (exists) {
       return NextResponse.json(
@@ -46,11 +72,11 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.create({
-      firstName,
-      lastName,
-      email,
+      firstName: firstName.trim().slice(0, 80),
+      lastName: lastName.trim().slice(0, 80),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      phone,
+      phone: typeof phone === "string" ? phone.trim().slice(0, 30) : "",
       role: "user",
     });
 
@@ -65,7 +91,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.log(error);
+    console.error("Registration failed:", error instanceof Error ? error.name : "unknown");
 
     return NextResponse.json(
       {

@@ -3,8 +3,21 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { assertSameOrigin } from "@/lib/requestSecurity";
 
 export async function POST(req: Request) {
+  const originError = assertSameOrigin(req);
+  if (originError) return originError;
+
+  const limited = rateLimit(`reset:${getClientIp(req)}`, 8, 15 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json(rateLimitResponse(limited.retryAfter), {
+      status: 429,
+      headers: { "Retry-After": String(limited.retryAfter) },
+    });
+  }
+
   try {
     const { token, password } = await req.json();
 
@@ -46,6 +59,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     user.password = hashedPassword;
+    user.sessionVersion = (user.sessionVersion || 0) + 1;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 

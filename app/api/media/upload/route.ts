@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     const details = getUploadErrorDetails(error);
     console.error("Media upload failed:", details);
     return NextResponse.json({
-      message: `تعذر رفع الملف إلى Cloudinary: ${details.message.slice(0, 300)}${details.httpCode ? ` (HTTP ${details.httpCode})` : ""}`,
+      message: "تعذر رفع الملف حالياً. يرجى المحاولة مرة أخرى أو استخدام رابط فيديو مدعوم.",
     }, { status: 502 });
   }
 }

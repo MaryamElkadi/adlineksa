@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import MarketplaceConnection from '@/models/MarketplaceConnection';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 function safeConnection(rec: any) {
   return {
@@ -12,6 +13,8 @@ function safeConnection(rec: any) {
 }
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     await connectToDatabase();
     const records = await MarketplaceConnection.find({}).lean();
@@ -29,6 +32,6 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ message: err.message || 'Failed to fetch connections' }, { status: 400 });
+    return NextResponse.json({ message: 'Failed to fetch connections' }, { status: 400 });
   }
 }

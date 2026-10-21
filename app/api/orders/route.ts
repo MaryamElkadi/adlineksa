@@ -5,6 +5,8 @@ import Order from "@/models/Order";
 import Product from "@/models/Product";
 import { getCurrentUser } from "@/lib/currentUser";
 import { ensureInitialCatalog } from "@/lib/seed";
+import { escapeRegex } from "@/lib/requestSecurity";
+import { isAdminUser } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,7 @@ async function restoreReservedStock(reservedProducts: Array<{ productId: string;
   }
 }
 
-function serializeOrder(order: any) {
+function serializeOrder(order: InstanceType<typeof Order>) {
   const value = order.toObject ? order.toObject() : order;
 
   return {
@@ -49,20 +51,13 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const isAdmin = searchParams.get("admin") === "true" || searchParams.get("all") === "true";
+    const isAdmin = isAdminUser(currentUser) && (searchParams.get("admin") === "true" || searchParams.get("all") === "true");
     const statusFilter = searchParams.get("status") || "";
     const searchFilter = searchParams.get("search") || "";
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
 
-    if (isAdmin && currentUser.role !== "admin") {
-      return NextResponse.json(
-        { message: "Forbidden: Admin access required" },
-        { status: 403 }
-      );
-    }
-
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (!isAdmin) {
       query.userId = currentUser._id;
@@ -73,7 +68,7 @@ export async function GET(request: Request) {
     }
 
     if (searchFilter) {
-      const searchRegex = new RegExp(searchFilter, "i");
+      const searchRegex = new RegExp(escapeRegex(searchFilter.slice(0, 80)), "i");
       query.$or = [
         { orderNumber: searchRegex },
         { "customer.fullName": searchRegex },
@@ -96,7 +91,7 @@ export async function GET(request: Request) {
         .limit(limit)
         .lean();
 
-      const formattedOrders = orders.map((order: any) => ({
+      const formattedOrders = orders.map((order) => ({
         ...order,
         _id: order._id.toString(),
         id: order._id.toString(),
@@ -122,7 +117,7 @@ export async function GET(request: Request) {
       .lean();
 
     return NextResponse.json(
-      orders.map((order: any) => ({
+      orders.map((order) => ({
         ...order,
         _id: order._id.toString(),
         id: order._id.toString(),
@@ -370,19 +365,19 @@ export async function POST(request: Request) {
     const orderTotal = Math.round((subtotal + subtotal * 0.15) * 100) / 100;
 
     const order = await Order.create({
-      ...body,
       items: verifiedItems,
       total: orderTotal,
       shippingCost: null,
-
-      // IMPORTANT
       ...(currentUser ? { userId: currentUser._id } : {}),
-
-      orderNumber: `ADL-${Date.now()
-        .toString()
-        .slice(-8)}`,
-
+      orderNumber: `ADL-${Date.now().toString().slice(-8)}`,
       status: "Pending",
+      shippingAddress: body.shippingAddress.trim(),
+      customer: {
+        fullName: body.customer.fullName.trim(),
+        email: body.customer.email.trim().toLowerCase(),
+        phone: body.customer.phone.trim(),
+      },
+      paymentMethod: body.paymentMethod,
     });
 
     return NextResponse.json(

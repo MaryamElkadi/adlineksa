@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireAdmin } from "@/lib/requireAdmin";
 import { connectToDatabase } from "@/lib/mongodb";
 import Order from "@/models/Order";
 import Quotation from "@/models/Quotation";
@@ -12,6 +13,9 @@ import Ticket from "@/models/Ticket";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
+
   try {
     await connectToDatabase();
 
@@ -138,7 +142,7 @@ export async function GET() {
       revenue: totalRevenue,
     });
   } catch (error) {
-    console.error("ADMIN DASHBOARD ERROR:", error);
+    console.error("ADMIN DASHBOARD ERROR:", error instanceof Error ? error.name : "unknown");
 
     return NextResponse.json(
       { message: "Failed to load dashboard data" },

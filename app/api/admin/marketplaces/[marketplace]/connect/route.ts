@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import MarketplaceConnection from '@/models/MarketplaceConnection';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 function validateMarketplace(marketplace: string | null): string {
   if (!marketplace) throw new Error('Marketplace parameter is required');
@@ -20,6 +21,8 @@ function safeConnection(rec: any) {
 }
 
 export async function POST(request: Request, context: RouteContext<'/api/admin/marketplaces/[marketplace]/connect'>) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   try {
     const { marketplace } = await context.params;
     const mp = validateMarketplace(marketplace);
@@ -34,6 +37,6 @@ export async function POST(request: Request, context: RouteContext<'/api/admin/m
     return NextResponse.json(safeConnection(rec));
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ message: err.message || 'Connect failed' }, { status: 400 });
+    return NextResponse.json({ message: 'Connect failed' }, { status: 400 });
   }
 }

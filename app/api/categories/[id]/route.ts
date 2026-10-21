@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { serializeDocument } from "@/lib/serializers";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export async function GET(_request: Request, { params }: RouteContext<'/api/categories/[id]'>) {
   await connectToDatabase();
@@ -12,6 +13,8 @@ export async function GET(_request: Request, { params }: RouteContext<'/api/cate
 }
 
 export async function PATCH(request: Request, { params }: RouteContext<'/api/categories/[id]'>) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   try {
     const { id } = await params;
     const body = await request.json();
@@ -24,7 +27,9 @@ export async function PATCH(request: Request, { params }: RouteContext<'/api/cat
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteContext<'/api/categories/[id]'>) {
+export async function DELETE(request: Request, { params }: RouteContext<'/api/categories/[id]'>) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   const { id } = await params;
   await connectToDatabase();
   const category = await Category.findById(id);

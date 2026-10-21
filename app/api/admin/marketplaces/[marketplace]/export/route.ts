@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { generateExcel } from "@/lib/excelGenerator";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 /**
  * Validate marketplace value – only "amazon" or "noon" are allowed.
@@ -19,6 +20,8 @@ function validateMarketplace(marketplace: string | null): string {
  * GET – Export ALL active products for the given marketplace.
  */
 export async function GET(request: Request, context: RouteContext<"/api/admin/marketplaces/[marketplace]/export">) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     const { marketplace } = await context.params;
     const mp = validateMarketplace(marketplace);
@@ -38,7 +41,7 @@ export async function GET(request: Request, context: RouteContext<"/api/admin/ma
     });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ message: err.message || "Export failed" }, { status: 400 });
+    return NextResponse.json({ message: "Export failed" }, { status: 400 });
   }
 }
 
@@ -47,6 +50,8 @@ export async function GET(request: Request, context: RouteContext<"/api/admin/ma
  * Expected body: { productIds: string[] }
  */
 export async function POST(request: Request, context: RouteContext<"/api/admin/marketplaces/[marketplace]/export">) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   try {
     const { marketplace } = await context.params;
     const mp = validateMarketplace(marketplace);
@@ -74,7 +79,7 @@ export async function POST(request: Request, context: RouteContext<"/api/admin/m
     });
   } catch (err: any) {
     console.error(err);
-    const message = err instanceof SyntaxError ? "Invalid JSON body" : err.message;
-    return NextResponse.json({ message: message || "Export failed" }, { status: 400 });
+    const message = err instanceof SyntaxError ? "Invalid JSON body" : "Export failed";
+    return NextResponse.json({ message }, { status: 400 });
   }
 }

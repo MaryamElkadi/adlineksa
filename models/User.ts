@@ -54,6 +54,12 @@ const UserSchema = new Schema(
       default: true,
     },
 
+    sessionVersion: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     resetPasswordToken: {
       type: String,
       default: null,
@@ -68,5 +74,9 @@ const UserSchema = new Schema(
     timestamps: true,
   }
 );
+
+if (models.User && !models.User.schema.path("sessionVersion")) {
+  mongoose.deleteModel("User");
+}
 
 export default models.User || model("User", UserSchema);

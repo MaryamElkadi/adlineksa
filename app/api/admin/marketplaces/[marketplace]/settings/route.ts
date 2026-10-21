@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import MarketplaceConnection from '@/models/MarketplaceConnection';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 type SafeSettings = {
   marketplace: string;
@@ -35,6 +36,8 @@ function safeSettings(rec: any): SafeSettings {
 }
 
 export async function GET(request: Request, context: RouteContext<'/api/admin/marketplaces/[marketplace]/settings'>) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     const { marketplace } = await context.params;
     const mp = validateMarketplace(marketplace);
@@ -54,11 +57,13 @@ export async function GET(request: Request, context: RouteContext<'/api/admin/ma
     return NextResponse.json(safeSettings(rec));
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ message: err.message || 'Failed to fetch settings' }, { status: 400 });
+    return NextResponse.json({ message: 'Failed to fetch settings' }, { status: 400 });
   }
 }
 
 export async function PATCH(request: Request, context: RouteContext<'/api/admin/marketplaces/[marketplace]/settings'>) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   try {
     const { marketplace } = await context.params;
     const mp = validateMarketplace(marketplace);
@@ -81,6 +86,6 @@ export async function PATCH(request: Request, context: RouteContext<'/api/admin/
     return NextResponse.json(safeSettings(rec));
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ message: err.message || 'Failed to save settings' }, { status: 400 });
+    return NextResponse.json({ message: 'Failed to save settings' }, { status: 400 });
   }
 }

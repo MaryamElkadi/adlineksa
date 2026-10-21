@@ -2,17 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-
-  // If on admin/login, render children directly
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
   const [role, setRole] = useState<'Super Admin' | 'Manager' | 'Production' | 'Support'>('Super Admin');
   const navItems = [
     { href: '/admin', label: '📊 نظرة عامة علي اللوحة' },
@@ -58,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-[10px] text-slate-500 font-bold uppercase block">الصلاحية الحالية:</span>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as any)}
+              onChange={(e) => setRole(e.target.value as typeof role)}
               className="bg-transparent text-slate-800 font-black focus:outline-none w-full cursor-pointer text-xs"
             >
               <option value="Super Admin" className="bg-white text-slate-800">مدير عام (جميع الصلاحيات)</option>

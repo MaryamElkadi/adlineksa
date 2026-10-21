@@ -88,13 +88,19 @@ export async function POST(request: Request) {
     const user = await User.findById(userId);
 
     const quotation = await Quotation.create({
-      title: body.title || body.name || "طلب تسعير",
-      specs: body.specs || body.details || "",
-      name: body.name || (user ? `${user.firstName} ${user.lastName}` : "عميل"),
-      email: body.email || (user ? user.email : "user@example.com"),
-      phone: body.phone || (user && user.phone ? user.phone : "غير مدخل"),
-      ...body,
+      title: String(body.title || body.name || "طلب تسعير").slice(0, 200),
+      specs: String(body.specs || body.details || "").slice(0, 4000),
+      name: String(body.name || (user ? `${user.firstName} ${user.lastName}` : "عميل")).slice(0, 120),
+      email: user ? user.email : "user@example.com",
+      phone: String(body.phone || (user && user.phone ? user.phone : "غير مدخل")).slice(0, 30),
+      quantity: Number(body.quantity) || 1,
+      width: Number(body.width) || 0,
+      height: Number(body.height) || 0,
+      material: typeof body.material === "string" ? body.material.slice(0, 120) : "",
+      details: typeof body.details === "string" ? body.details.slice(0, 4000) : "",
+      category: typeof body.category === "string" ? body.category.slice(0, 120) : "",
       userId,
+      status: "Pending",
     });
 
     return NextResponse.json(

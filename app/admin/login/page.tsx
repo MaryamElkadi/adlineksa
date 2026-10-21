@@ -20,15 +20,17 @@ export default function AdminLoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
       const data = await res.json();
       if (res.ok && data.user) {
         if (data.user.role !== 'admin') {
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
           setError('هذا الحساب لا يملك صلاحيات مدير النظام.');
           return;
         }
-        localStorage.setItem('adline_admin_authenticated', 'true');
         router.push('/admin');
+        router.refresh();
       } else {
         setError(data.message || 'بيانات الدخول غير صحيحة.');
       }

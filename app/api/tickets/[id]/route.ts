@@ -179,7 +179,15 @@ export async function PATCH(
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    if (body.status) ticket.status = body.status;
+    const customerStatuses = new Set(["Closed", "Open"]);
+    const adminStatuses = new Set(["Open", "In Progress", "Resolved", "Closed"]);
+    if (body.status) {
+      if (currentUser.role === "admin" && adminStatuses.has(body.status)) {
+        ticket.status = body.status;
+      } else if (currentUser.role !== "admin" && customerStatuses.has(body.status)) {
+        ticket.status = body.status;
+      }
+    }
     if (body.priority && currentUser.role === "admin") ticket.priority = body.priority;
 
     await ticket.save();

@@ -4,6 +4,7 @@ import { serializeDocument } from "@/lib/serializers";
 import Category from "@/models/Category";
 import Product from "@/models/Product";
 import { ensureInitialCatalog } from "@/lib/seed";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export async function GET() {
   try {
@@ -49,6 +50,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   try {
     const body = await request.json();
     if (!body.name || !body.nameAr || !body.slug) return NextResponse.json({ message: "Name, Arabic name, and slug are required." }, { status: 400 });

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import SallaStore from "@/models/SallaStore";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
   try {
     await connectToDatabase();
 

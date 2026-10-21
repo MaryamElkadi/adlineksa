@@ -1,29 +1,34 @@
 import { NextResponse } from "next/server";
+import type { PipelineStage } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Order from "@/models/Order";
-import { getCurrentUserId } from "@/lib/currentUser";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { escapeRegex } from "@/lib/requestSecurity";
+
+const ALLOWED_ROLES = new Set(["user", "admin"]);
 
 export async function GET(request: Request) {
-  try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
 
+  try {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const role = searchParams.get("role") || "";
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (role && role !== "all") {
+      if (!ALLOWED_ROLES.has(role)) {
+        return NextResponse.json({ message: "Invalid role filter" }, { status: 400 });
+      }
       query.role = role;
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, "i");
+      const searchRegex = new RegExp(escapeRegex(search.slice(0, 80)), "i");
       query.$or = [
         { firstName: searchRegex },
         { lastName: searchRegex },
@@ -32,11 +37,9 @@ export async function GET(request: Request) {
       ];
     }
 
-    // Pagination parameters (optional)
-    const page = parseInt(searchParams.get('page') || '0', 10);
-    const limit = parseInt(searchParams.get('limit') || '0', 10);
+    const page = parseInt(searchParams.get("page") || "0", 10);
+    const limit = Math.min(100, parseInt(searchParams.get("limit") || "0", 10));
 
-    // Projection for user list (exclude sensitive data)
     const projection = {
       _id: 1,
       firstName: 1,
@@ -48,28 +51,19 @@ export async function GET(request: Request) {
       createdAt: 1,
     };
 
-    // Base aggregation pipeline
-    const pipeline: any[] = [{ $match: query }];
+    const pipeline: PipelineStage[] = [{ $match: query }];
     pipeline.push({ $project: projection });
     pipeline.push({ $sort: { createdAt: -1 } });
 
-    // If pagination requested, apply skip/limit and total count
-    if (page > 0 && limit > 0) {
-      const total = await User.countDocuments(query);
-      const totalPages = Math.ceil(total / limit);
-      const skip = (page - 1) * limit;
-      pipeline.push({ $skip: skip });
-      pipeline.push({ $limit: limit });
-      const users = await User.aggregate(pipeline);
-      // Lookup orders for each user and compute stats
-      const usersWithStats = await Promise.all(
-        users.map(async (u: any) => {
+    async function withStats(users: Array<Record<string, unknown>>) {
+      return Promise.all(
+        users.map(async (u) => {
           const userOrders = await Order.find({ userId: u._id }).lean();
           const ordersCount = userOrders.length;
-          const totalSpent = userOrders.reduce((sum: number, ord: any) => sum + (ord.total || 0), 0);
+          const totalSpent = userOrders.reduce((sum: number, ord: { total?: number }) => sum + (ord.total || 0), 0);
           return {
-            _id: u._id.toString(),
-            id: u._id.toString(),
+            _id: String(u._id),
+            id: String(u._id),
             firstName: u.firstName || "",
             lastName: u.lastName || "",
             fullName: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "بدون اسم",
@@ -79,42 +73,29 @@ export async function GET(request: Request) {
             isActive: u.isActive !== undefined ? u.isActive : true,
             ordersCount,
             totalSpent,
-            createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
+            createdAt: u.createdAt ? new Date(String(u.createdAt)).toISOString() : new Date().toISOString(),
           };
         })
       );
+    }
+
+    if (page > 0 && limit > 0) {
+      const total = await User.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
+      const skip = (page - 1) * limit;
+      pipeline.push({ $skip: skip });
+      pipeline.push({ $limit: limit });
+      const users = await User.aggregate(pipeline);
       return NextResponse.json({
-        users: usersWithStats,
+        users: await withStats(users),
         pagination: { page, limit, total, totalPages },
       });
     }
 
-    // No pagination – return all users with stats
     const users = await User.aggregate(pipeline);
-    const usersWithStats = await Promise.all(
-      users.map(async (u: any) => {
-        const userOrders = await Order.find({ userId: u._id }).lean();
-        const ordersCount = userOrders.length;
-        const totalSpent = userOrders.reduce((sum: number, ord: any) => sum + (ord.total || 0), 0);
-        return {
-          _id: u._id.toString(),
-          id: u._id.toString(),
-          firstName: u.firstName || "",
-          lastName: u.lastName || "",
-          fullName: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "بدون اسم",
-          email: u.email || "",
-          phone: u.phone || "",
-          role: u.role || "user",
-          isActive: u.isActive !== undefined ? u.isActive : true,
-          ordersCount,
-          totalSpent,
-          createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
-        };
-      })
-    );
-    return NextResponse.json(usersWithStats);
+    return NextResponse.json(await withStats(users));
   } catch (error) {
-    console.error("GET USERS ERROR:", error);
+    console.error("GET USERS ERROR:", error instanceof Error ? error.name : "unknown");
     return NextResponse.json(
       { message: "Could not load users" },
       { status: 500 }
@@ -123,12 +104,10 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
 
+  try {
     await connectToDatabase();
     const { userId, role, isActive } = await request.json();
 
@@ -139,9 +118,25 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const updateData: any = {};
-    if (role !== undefined) updateData.role = role;
-    if (isActive !== undefined) updateData.isActive = isActive;
+    const updateData: Record<string, unknown> = {};
+    if (role !== undefined) {
+      if (!ALLOWED_ROLES.has(role)) {
+        return NextResponse.json({ message: "Invalid role" }, { status: 400 });
+      }
+      if (String(userId) === auth.user?._id.toString() && role !== "admin") {
+        return NextResponse.json({ message: "You cannot remove your own admin role." }, { status: 400 });
+      }
+      updateData.role = role;
+    }
+    if (isActive !== undefined) {
+      if (typeof isActive !== "boolean") {
+        return NextResponse.json({ message: "Invalid account status" }, { status: 400 });
+      }
+      if (String(userId) === auth.user?._id.toString() && isActive === false) {
+        return NextResponse.json({ message: "You cannot deactivate your own account." }, { status: 400 });
+      }
+      updateData.isActive = isActive;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       returnDocument: "after",
@@ -157,7 +152,7 @@ export async function PATCH(request: Request) {
       isActive: updatedUser.isActive,
     });
   } catch (error) {
-    console.error("PATCH USER ERROR:", error);
+    console.error("PATCH USER ERROR:", error instanceof Error ? error.name : "unknown");
     return NextResponse.json(
       { message: "Could not update user" },
       { status: 500 }

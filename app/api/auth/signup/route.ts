@@ -5,8 +5,24 @@ import { cookies } from "next/headers";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
 import { createToken } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, getAuthCookieOptions } from "@/lib/authCookie";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { assertSameOrigin } from "@/lib/requestSecurity";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  const originError = assertSameOrigin(req);
+  if (originError) return originError;
+
+  const limited = rateLimit(`signup:${getClientIp(req)}`, 8, 60 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json(rateLimitResponse(limited.retryAfter), {
+      status: 429,
+      headers: { "Retry-After": String(limited.retryAfter) },
+    });
+  }
+
   try {
     await connectToDatabase();
 
@@ -22,7 +38,11 @@ export async function POST(req: Request) {
       !firstName ||
       !lastName ||
       !email ||
-      !password
+      !password ||
+      typeof firstName !== "string" ||
+      typeof lastName !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string"
     ) {
       return NextResponse.json(
         {
@@ -31,6 +51,13 @@ export async function POST(req: Request) {
         {
           status: 400,
         }
+      );
+    }
+
+    if (!EMAIL_REGEX.test(email) || password.length < 6) {
+      return NextResponse.json(
+        { message: "A valid email and a password of at least 6 characters are required." },
+        { status: 400 }
       );
     }
 
@@ -52,10 +79,10 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.create({
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      phone,
+      firstName: firstName.trim().slice(0, 80),
+      lastName: lastName.trim().slice(0, 80),
+      email: email.toLowerCase().trim(),
+      phone: typeof phone === "string" ? phone.trim().slice(0, 30) : "",
       password: hashedPassword,
       role: "user",
     });
@@ -63,18 +90,15 @@ export async function POST(req: Request) {
     const token = createToken({
       id: user._id.toString(),
       role: user.role,
+      sessionVersion: user.sessionVersion || 0,
     });
 
     const cookieStore = await cookies();
 
     cookieStore.set({
-      name: "adline_token",
+      name: AUTH_COOKIE_NAME,
       value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      ...getAuthCookieOptions(),
     });
 
     return NextResponse.json({
@@ -89,7 +113,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.log(error);
+    console.error("Signup failed:", error instanceof Error ? error.name : "unknown");
 
     return NextResponse.json(
       {

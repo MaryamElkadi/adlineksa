@@ -10,6 +10,9 @@ globalForMongoose.mongooseCache = cache;
 /** Reuses one connection promise so model calls never buffer behind parallel connects. */
 export async function connectToDatabase() {
   if (!MONGODB_URI) throw new Error("MONGODB_URI is missing");
+  if (!MONGODB_URI.startsWith("mongodb://") && !MONGODB_URI.startsWith("mongodb+srv://")) {
+    throw new Error("MONGODB_URI is invalid");
+  }
   if (cache.conn && mongoose.connection.readyState === 1) return cache.conn.connection;
 
   if (!cache.promise) {
@@ -18,6 +21,7 @@ export async function connectToDatabase() {
       serverSelectionTimeoutMS: 8_000,
       connectTimeoutMS: 8_000,
       maxPoolSize: 10,
+      autoIndex: process.env.NODE_ENV !== "production",
     });
   }
 

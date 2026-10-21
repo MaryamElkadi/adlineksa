@@ -3,14 +3,40 @@ import crypto from "crypto";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { assertSameOrigin } from "@/lib/requestSecurity";
+
+function appBaseUrl() {
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // Fall through to the local development default.
+    }
+  }
+  if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
+  throw new Error("NEXT_PUBLIC_APP_URL is required in production");
+}
 
 export async function POST(req: Request) {
+  const originError = assertSameOrigin(req);
+  if (originError) return originError;
+
+  const limited = rateLimit(`forgot:${getClientIp(req)}`, 5, 15 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json(rateLimitResponse(limited.retryAfter), {
+      status: 429,
+      headers: { "Retry-After": String(limited.retryAfter) },
+    });
+  }
+
+  const genericResponse = NextResponse.json({
+    message: "إذا كان البريد الإلكتروني مسجلاً لدينا، فسنرسل رابط إعادة تعيين كلمة المرور.",
+  });
+
   try {
     const { email } = await req.json();
-
-    const genericResponse = NextResponse.json({
-      message: "إذا كان البريد الإلكتروني مسجلاً لدينا، فسنرسل رابط إعادة تعيين كلمة المرور.",
-    });
 
     if (!email || typeof email !== "string") {
       return genericResponse;
@@ -22,31 +48,21 @@ export async function POST(req: Request) {
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      // Return generic response to prevent account enumeration
       return genericResponse;
     }
 
-    // Generate unhashed random token for link
     const rawToken = crypto.randomBytes(32).toString("hex");
-
-    // Store hash of token in DB
     const tokenHash = crypto
       .createHash("sha256")
       .update(rawToken)
       .digest("hex");
 
     user.resetPasswordToken = tokenHash;
-    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
 
     await user.save();
 
-    // Determine application base URL
-    const origin = req.headers.get("origin") || req.headers.get("referer");
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (origin ? new URL(origin).origin : "http://localhost:3000");
-
-    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
+    const resetUrl = `${appBaseUrl()}/reset-password?token=${rawToken}`;
 
     await sendPasswordResetEmail({
       to: user.email,
@@ -55,7 +71,7 @@ export async function POST(req: Request) {
 
     return genericResponse;
   } catch (error) {
-    console.error("FORGOT PASSWORD ERROR:", error);
+    console.error("FORGOT PASSWORD ERROR:", error instanceof Error ? error.name : "unknown");
     return NextResponse.json(
       { message: "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً." },
       { status: 500 }
