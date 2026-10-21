@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PricingOption, Product, QuantityTier } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { WhatsAppDesignLink } from '@/components/contact/WhatsAppDesignLink';
 import { formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/useCart';
 
@@ -71,9 +72,6 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     product.configurableFinishes?.[0]?.label || ''
   );
   const [customNotes, setCustomNotes] = useState('');
-  const [fileUploaded, setFileUploaded] = useState<string | null>(null);
-  const [uploadedFileName, setUploadedFileName] = useState('');
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [needDesign, setNeedDesign] = useState(false);
   const [designBrief, setDesignBrief] = useState('');
@@ -182,7 +180,6 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
       unitPrice: unitCalculatedPrice,
       totalPrice: totalCalculatedPrice,
       customNotes,
-      fileUrl: fileUploaded || undefined,
     });
 
     if (!added) {
@@ -201,28 +198,20 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     }
   };
 
-  const handleFileUpload = async (file: File) => {
-    setCartError('');
-    if (file.size > 50 * 1024 * 1024) {
-      setCartError('حجم الملف يجب ألا يتجاوز 50MB.');
-      return;
-    }
-    setIsUploadingFile(true);
-    try {
-      const data = new FormData();
-      data.append('file', file);
-      data.append('name', `ملف طلب: ${product.nameAr || product.name}`);
-      const response = await fetch('/api/artworks', { method: 'POST', body: data });
-      const result = await response.json();
-      if (!response.ok || !result.fileUrl) throw new Error(result.message || 'تعذر رفع الملف.');
-      setFileUploaded(result.fileUrl);
-      setUploadedFileName(file.name);
-    } catch (error) {
-      setCartError(error instanceof Error ? error.message : 'تعذر رفع الملف.');
-    } finally {
-      setIsUploadingFile(false);
-    }
-  };
+  const designWhatsAppMessage = [
+    'مرحباً، لدي تصميم جاهز وأرغب في إرساله لطلب طباعة:',
+    `المنتج: ${product.nameAr || product.name}`,
+    `الكمية: ${quantity} ${pricingUnit === 'meter' ? 'متر' : 'قطعة'}`,
+    `المقاس: ${selectedSize}`,
+    `الخامة: ${selectedMaterial}`,
+    selectedColor ? `اللون: ${selectedColor}` : '',
+    designPlacement ? `مكان التصميم: ${designPlacement}` : '',
+    printSide ? `وجه الطباعة: ${printSide}` : '',
+    lamination ? `التشطيب: ${lamination}` : '',
+    lighting ? `الإضاءة: ${lighting}` : '',
+    customNotes ? `ملاحظات: ${customNotes}` : '',
+    'سأرفق ملف التصميم في محادثة واتساب.',
+  ].filter(Boolean).join('\n');
 
   return (
     <div dir="rtl" className="bg-white border-2 border-slate-200 rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col gap-6">
@@ -504,30 +493,18 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
 
       {/* قسم رفع الملفات */}
       {!needDesign ? (
-  <div className="border-2 border-dashed border-slate-300 bg-slate-50 rounded-2xl p-4 text-center">
-    <label className="cursor-pointer block">
-
-      <span className="text-xs font-bold block mb-2">
-        📁 رفع ملف التصميم
-      </span>
-
-      <span className="text-[11px] text-slate-500 block mb-3">
-        PDF, AI, PSD, PNG (حتى 50MB)
-      </span>
-
-      <input
-        type="file"
-        className="hidden"
-        onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleFileUpload(file); }}
-        disabled={isUploadingFile}
-      />
-
-      <span className="inline-block px-4 py-2 rounded-lg bg-white border border-slate-300 font-bold text-brand-blue">
-        {isUploadingFile ? 'جاري رفع الملف...' : fileUploaded ? `الملف: ${uploadedFileName}` : 'اختر الملف'}
-      </span>
-
-    </label>
-  </div>
+        <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+          <span className="mb-2 block text-xs font-bold">📁 عندك تصميم جاهز؟</span>
+          <p className="mb-3 text-[11px] text-slate-500">
+            أرسليه لنا عبر واتساب. لن يتم رفع ملف التصميم على الموقع.
+          </p>
+          <WhatsAppDesignLink
+            message={designWhatsAppMessage}
+            className="inline-block rounded-lg bg-[#25D366] px-4 py-2 font-bold text-white hover:bg-[#1ebe5d]"
+          >
+            إرسال التصميم عبر واتساب
+          </WhatsAppDesignLink>
+        </div>
 ) : (
   <div className="rounded-2xl border border-amber-300 bg-white p-5">
 
@@ -560,13 +537,7 @@ export const SmartConfigurator: React.FC<SmartConfiguratorProps> = ({ product })
     <input
       type="checkbox"
       checked={needDesign}
-      onChange={(e) => {
-        setNeedDesign(e.target.checked);
-
-        if (e.target.checked) {
-          setFileUploaded(null);
-        }
-      }}
+      onChange={(e) => setNeedDesign(e.target.checked)}
       className="mt-1 h-5 w-5 accent-amber-500"
     />
 

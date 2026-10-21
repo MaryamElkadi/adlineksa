@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { WhatsAppDesignLink } from '@/components/contact/WhatsAppDesignLink';
 
 interface OrderItem {
   productId: string;
@@ -145,11 +146,7 @@ export default function DashboardPage() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
   const [isNewQuoteOpen, setIsNewQuoteOpen] = useState<boolean>(false);
   const [isNewTicketOpen, setIsNewTicketOpen] = useState<boolean>(false);
-  const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
-  const [uploadingArtwork, setUploadingArtwork] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit profile state
   const [editFirstName, setEditFirstName] = useState('');
@@ -163,6 +160,13 @@ export default function DashboardPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  const artworkWhatsAppMessage = [
+    "مرحباً، أريد إرسال تصميم جاهز لطلب طباعة.",
+    user ? `الاسم: ${user.firstName} ${user.lastName}` : "",
+    user?.phone ? `رقم الجوال: ${user.phone}` : "",
+    "سأرفق ملف التصميم في محادثة واتساب.",
+  ].filter(Boolean).join("\n");
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -340,41 +344,6 @@ export default function DashboardPage() {
       showToast(error.message || "حدث خطأ أثناء إرسال الرد");
     } finally {
       setSendingReply(false);
-    }
-  };
-
-  // Dynamic Artwork Upload Handler
-  const handleArtworkUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      setUploadingArtwork(true);
-      const response = await fetch("/api/artworks", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const artwork = await response.json();
-      setArtworks((prev) => [artwork, ...prev]);
-      setIsUploadOpen(false);
-      showToast("تم رفع التصميم بنجاح!");
-    } catch (error) {
-      console.error(error);
-      showToast("حدث خطأ أثناء رفع التصميم");
-    } finally {
-      setUploadingArtwork(false);
-      if (e.target) e.target.value = '';
     }
   };
 
@@ -799,23 +768,21 @@ export default function DashboardPage() {
             <div>
               <h3 className="text-lg font-black text-slate-900">ملفات التصاميم المحفوظة الخاصة بك</h3>
               <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-                ملفات PDF عالية الدقة والشعارات المتجهة والقوالب المخصصة المحفوظة ليسهل عليك إعادة طلبها بنقرة واحدة.
+                تصاميمك السابقة المحفوظة. لإرسال تصميم جديد، أرفقيه لنا مباشرة في محادثة واتساب.
               </p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsUploadOpen(true)}
-              className="font-black text-amber-900 bg-amber-100 border-amber-300 hover:bg-amber-200 cursor-pointer whitespace-nowrap"
+            <WhatsAppDesignLink
+              message={artworkWhatsAppMessage}
+              className="inline-block whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2 text-xs font-black text-emerald-900 transition hover:bg-emerald-200"
             >
-              + رفع تصميم جديد (Vector / PDF)
-            </Button>
+              إرسال تصميم جديد عبر واتساب
+            </WhatsAppDesignLink>
           </div>
 
           {artworks.length === 0 ? (
             <div className="text-center py-8 text-slate-400 font-medium border-2 border-dashed border-slate-200 rounded-2xl">
               <div className="text-4xl mb-2">📁</div>
-              لا توجد تصاميم مرفوعة حالياً. اضغط على أزرار الرفع لإضافة تصميم جديد.
+              لا توجد تصاميم سابقة محفوظة. يمكنك إرسال تصميم جديد عبر واتساب.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -919,45 +886,6 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Modal: Upload Artwork */}
-      {isUploadOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-6 relative border border-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-lg font-black text-slate-900">رفع تصميم جديد</h3>
-              <button onClick={() => setIsUploadOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
-            </div>
-
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-50 rounded-2xl p-8 text-center cursor-pointer space-y-3 transition-all"
-            >
-              <div className="text-4xl">📤</div>
-              <div className="text-xs font-bold text-slate-700">
-                {uploadingArtwork ? "جاري رفع الملف..." : "اضغط هنا لاختيار ملف التصميم من جهازك"}
-              </div>
-              <p className="text-[10px] text-slate-400">الصيغ المدعومة: .pdf, .ai, .eps, .psd</p>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.ai,.eps,.psd"
-                className="hidden"
-                onChange={handleArtworkUpload}
-                disabled={uploadingArtwork}
-              />
-            </div>
-
-            <Button
-              onClick={() => setIsUploadOpen(false)}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl cursor-pointer"
-            >
-              إلغاء
-            </Button>
-          </div>
         </div>
       )}
 

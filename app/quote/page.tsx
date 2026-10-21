@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { WhatsAppDesignLink } from "@/components/contact/WhatsAppDesignLink";
 
 export default function QuotationPage() {
   const searchParams = useSearchParams();
@@ -33,6 +34,18 @@ export default function QuotationPage() {
       [e.target.name]: e.target.value,
     });
   };
+
+  const designWhatsAppMessage = [
+    "مرحباً، أريد إرسال تصميم أو مخطط فني مرتبط بطلب عرض سعر.",
+    form.title ? `المشروع: ${form.title}` : "",
+    form.company ? `الشركة: ${form.company}` : "",
+    form.name ? `الاسم: ${form.name}` : "",
+    form.phone ? `رقم الجوال: ${form.phone}` : "",
+    form.category ? `الفئة: ${form.category}` : "",
+    form.quantity ? `الكمية: ${form.quantity}` : "",
+    form.details ? `التفاصيل: ${form.details}` : "",
+    "سأرفق ملف التصميم في محادثة واتساب.",
+  ].filter(Boolean).join("\n");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -352,20 +365,21 @@ export default function QuotationPage() {
                   />
                 </div>
 
-                {/* Upload Section */}
+                {/* Send design through WhatsApp */}
                 <div className="rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/50 p-6 text-center space-y-2">
                   <div className="text-3xl">📎</div>
                   <h4 className="font-bold text-slate-800 text-sm">
-                    إرفاق التصاميم أو المخططات الفنية
+                    عندك تصميم أو مخطط فني جاهز؟
                   </h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    رفع ملفات PDF، الهوية البصرية، أو الرسومات للتحقق من الجودة.
+                    أرسله لنا عبر واتساب وأرفقه في المحادثة. لا يتم رفع الملفات على الموقع.
                   </p>
-                  <input
-                    type="file"
-                    multiple
-                    className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-200/60 file:text-amber-800 hover:file:bg-amber-300 cursor-pointer"
-                  />
+                  <WhatsAppDesignLink
+                    message={designWhatsAppMessage}
+                    className="inline-block rounded-xl bg-[#25D366] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#1ebe5d]"
+                  >
+                    إرسال التصميم عبر واتساب
+                  </WhatsAppDesignLink>
                 </div>
               </div>
 

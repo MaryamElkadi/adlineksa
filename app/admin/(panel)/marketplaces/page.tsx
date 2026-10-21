@@ -30,19 +30,37 @@ export default function MarketplacesPage() {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-      <MarketplaceCard
-        title="Amazon السعودية"
-        description="تصدير منتجات إلى منصة Amazon السعودية"
-        marketplace="amazon"
-        connection={connections['amazon']}
-      />
-      <MarketplaceCard
-        title="Noon السعودية"
-        description="تصدير منتجات إلى منصة Noon السعودية"
-        marketplace="noon"
-        connection={connections['noon']}
-      />
+    <div className="space-y-6 p-4">
+      <section className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Import products to Salla</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Download the active product catalog as an Excel file, then upload it
+            in Salla’s product import page.
+          </p>
+        </div>
+        <a
+          href="/api/admin/marketplaces/salla/export"
+          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700"
+        >
+          Download Excel file
+        </a>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <MarketplaceCard
+          title="Amazon السعودية"
+          description="تصدير منتجات إلى منصة Amazon السعودية"
+          marketplace="amazon"
+          connection={connections['amazon']}
+        />
+        <MarketplaceCard
+          title="Noon السعودية"
+          description="تصدير منتجات إلى منصة Noon السعودية"
+          marketplace="noon"
+          connection={connections['noon']}
+        />
+      </div>
     </div>
   );
 }
